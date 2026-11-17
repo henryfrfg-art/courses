@@ -1,0 +1,2197 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Courses"><meta name="theme-color" content="#0c7566">
+<title>Mes courses</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Concept : une appli d'écran unique, trois onglets (Repas, Liste, Réglages), lisible d'une main en magasin. */
+:root{
+  --bg:#f1f5f4; --surface:#ffffff; --ink:#132528; --muted:#587074; --line:#d6e0df;
+  --accent:#0c7566; --accent-ink:#ffffff; --tint:#dcf0ec;
+  --frozen:#2b5fa8; --frozen-bg:#e3edfb; --okbg:#dff3e6; --pl1:90%; --pl2:82%; --pm:38%;
+  --warn:#a35a08; --warn-bg:#fbeed6; --danger:#b3372f; --ok:#1d7a3f;
+  --f-head:'Space Grotesk',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1a1c; --surface:#16262a; --ink:#e6f0ef; --muted:#92aaad; --line:#27393d;
+  --accent:#41c9b1; --accent-ink:#06201b; --tint:#17383a;
+  --frozen:#8fb6f0; --frozen-bg:#1b2d47; --okbg:#173a26; --pl1:24%; --pl2:17%; --pm:72%;
+  --warn:#f0b35d; --warn-bg:#3a2c14; --danger:#ff8a80; --ok:#6fd08f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1a1c; --surface:#16262a; --ink:#e6f0ef; --muted:#92aaad; --line:#27393d;
+  --accent:#41c9b1; --accent-ink:#06201b; --tint:#17383a;
+  --frozen:#8fb6f0; --frozen-bg:#1b2d47; --okbg:#173a26; --pl1:24%; --pl2:17%; --pm:72%;
+  --warn:#f0b35d; --warn-bg:#3a2c14; --danger:#ff8a80; --ok:#6fd08f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 96px;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:720px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* En-tête */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding:12px 0 10px;border-bottom:1px solid var(--line)}
+.top .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top h1{font-size:21px;letter-spacing:-.01em}
+.stepper{display:inline-flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px}
+.stepper button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;font-size:19px;line-height:1}
+.stepper button:active{background:var(--tint)}
+.stepper span{min-width:64px;text-align:center;font-variant-numeric:tabular-nums;font-weight:500;font-size:14px}
+.prog{display:flex;align-items:center;gap:12px;margin-top:10px}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.prog span{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;white-space:nowrap}
+
+/* Navigation basse */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
+nav .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+nav button{border:0;background:transparent;border-radius:12px;padding:10px 4px;font-weight:600;font-size:14px;color:var(--muted);position:relative}
+nav button[aria-current="page"]{background:var(--tint);color:var(--accent)}
+.badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-size:12px;line-height:20px;font-variant-numeric:tabular-nums}
+
+/* Boutons */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Repas */
+.tools{padding:14px 0 6px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+input[type=search],input[type=number],input[type=text],textarea,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;font-size:14px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip small{opacity:.75;margin-left:4px;font-size:13px;font-variant-numeric:tabular-nums}
+.sect{margin:26px 0 12px;font:600 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.mc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;min-width:0}
+.mc .mtx{flex:1;min-width:0;display:grid;gap:3px}
+.mc .mrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mc.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mc .tt{font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.mc .sub{font-size:12.5px;color:var(--muted)}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.p-w{background:var(--warn-bg);color:var(--warn)}
+.p-o{background:var(--okbg);color:var(--ok)}
+.p-c{background:var(--tint);color:var(--muted)}
+.mc .ctl{flex:none}
+.mc .stepper{background:transparent}
+.mc .stepper button{width:30px;height:30px}
+.mc .stepper span{min-width:24px}
+.add{width:34px;height:34px;border-radius:50%;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:22px;line-height:1}
+.empty{padding:28px 8px;text-align:center;color:var(--muted)}
+.empty h2{color:var(--ink);font-size:18px;margin-bottom:6px}
+
+/* Liste */
+.sum{margin:14px 0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+.sum .big{font-family:var(--f-head);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.sum .sub{color:var(--muted);font-size:13.5px}
+.range{position:relative;height:10px;background:var(--line);border-radius:99px;margin:12px 0 6px}
+.range .zone{position:absolute;top:0;bottom:0;background:var(--tint);border:1px solid var(--accent);border-radius:99px}
+.range .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:99px;opacity:.9}
+.range .fill.over{background:var(--danger)}
+.band{display:flex;align-items:baseline;justify-content:space-between;margin:22px 0 4px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.band h2{font-size:17px;text-transform:uppercase;letter-spacing:.06em}
+.band.f2{border-color:var(--frozen)} .band.f2 h2{color:var(--frozen)}
+.band span{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.rayon{margin:14px 0 2px;font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ln{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.cb{flex:none;width:28px;height:28px;border-radius:8px;border:2px solid var(--muted);background:transparent;display:grid;place-items:center;padding:0}
+.cb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.cb[aria-pressed="true"]::after{content:"";width:6px;height:12px;border:solid var(--accent-ink);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.lt{flex:1;min-width:0;text-align:left;border:0;background:transparent;padding:6px 0}
+.lt .nm{font-weight:500;font-size:16px;overflow-wrap:anywhere}
+.lt .meta{display:block;font-size:12.5px;color:var(--muted)}
+.ln.done .nm{text-decoration:line-through;color:var(--muted)}
+.tag{display:inline-block;padding:1px 7px;border-radius:6px;background:var(--warn-bg);color:var(--warn);font-size:11.5px;font-weight:600;margin-left:6px}
+.tmp{flex:none;border:0;border-radius:99px;padding:5px 10px;font-size:12.5px;font-weight:600;background:var(--tint);color:var(--accent)}
+.tmp.f{background:var(--frozen-bg);color:var(--frozen)}
+.lmid{flex:1;min-width:0}
+.lmid .lt{width:100%;display:block}
+.lsub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:4px}
+.lsub .meta{font-size:12.5px;color:var(--muted)}
+.arr{flex:none;display:flex;gap:4px}
+.arr button{width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:24px;line-height:1;padding:0 0 3px}
+.arr button:active{background:var(--tint)}
+.tag.adj{background:var(--tint);color:var(--accent)}
+.more{flex:none;width:36px;height:36px;border:0;background:transparent;border-radius:50%;font-size:20px;color:var(--muted)}
+details.stock{margin-top:22px;border-top:1px solid var(--line);padding-top:10px}
+details.stock summary{cursor:pointer;font-weight:600}
+
+/* Réglages */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:14px 0;display:grid;gap:10px}
+.card h2{font-size:17px}
+.card p{margin:0;color:var(--muted);font-size:13.5px}
+.fld{display:grid;gap:4px;font-size:13.5px;font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ord{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:200px;resize:vertical}
+
+/* Feuille modale */
+.back{position:fixed;inset:0;background:rgba(5,15,17,.5);z-index:40;display:none}
+.back.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);border-radius:20px 20px 0 0;max-height:88%;overflow:auto;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:none}
+.sheet.on{display:block}
+.sheet .in{max-width:720px;margin:0 auto;display:grid;gap:12px}
+.sheet h2{font-size:19px}
+.irow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.irow .q{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+.cin{display:flex;align-items:center;gap:8px}
+.cin input{width:84px;text-align:right}
+.addbox{display:grid;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:60;font-weight:500;max-width:90%;display:none}
+.toast.on{display:block}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top" id="top"></header>
+  <main id="main"></main>
+</div>
+<nav><div class="in" id="nav"></div></nav>
+<div class="back" id="back"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="in" id="sheetIn"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Constantes ---------- */
+var CATS=['Pâtes et nouilles','Viandes et volailles','Plats complets et traditionnels','Burgers, tacos et sandwichs','Pizzas, tartes et bricks','Soupes, salades et entrées'];
+var RAYONS=['Épicerie salée','Épicerie sucrée','Conserves','Boissons','Hygiène et entretien','Fruits et légumes','Pain et boulangerie','Boucherie','Poissonnerie','Charcuterie traiteur','Crèmerie','Œufs','Autre'];
+var COUNT=['pièce','paquet','pot','boîte','portion'];
+var KEY='courses.v1';
+
+/* Quantités standard pour 2 personnes : [quantité, unité, taille du paquet]. Utilisées quand une quantité est inconnue (marquées « à vérifier »). */
+var STD={
+ 'pates':[200,'g',500],'spaghettis':[200,'g',500],'tagliatelles':[200,'g',500],'riz':[150,'g',1000],'semoule':[150,'g',500],
+ 'blanc de poulet':[300,'g'],'creme fraiche':[200,'ml',200],'lardons':[200,'g',200],'crevettes':[250,'g'],'fruits de mer':[250,'g'],
+ 'petits pois':[150,'g'],'epinards':[300,'g'],'farine':[125,'g',1000],'lait':[300,'ml',1000],'oeufs':[2,'pièce'],'thon':[1,'boîte'],
+ 'mayonnaise':[1,'pot'],'fromage blanc':[125,'g',500],'potimarron':[1,'pièce'],'fromage pour potimarron coulant':[1,'pièce'],
+ 'roquefort':[100,'g'],'cheddar en tranches':[4,'tranches'],'salade':[1,'pièce'],'bacon':[4,'tranches'],'oignon':[1,'pièce'],
+ 'frites':[500,'g'],'poivre':[1,'pot'],'steak de boeuf':[2,'pièce'],'steak de porc':[2,'pièce'],'boeuf':[300,'g'],'brocolis':[400,'g'],
+ 'yaourt grec':[1,'pot'],'ciboulette':[1,'pièce'],'citron':[1,'pièce'],'sauce tomate':[1,'boîte'],'boursin':[1,'pièce'],
+ 'saumon':[2,'portion'],'mozzarella':[1,'pièce'],'pain de mie':[1,'paquet'],'sauce cheddar':[1,'pot'],'steak hache':[2,'pièce'],
+ 'pain a burger':[2,'pièce'],'chou':[1,'pièce'],'carottes':[300,'g'],'pommes de terre':[800,'g'],'celeri':[1,'pièce'],'raviolis':[1,'paquet'],
+ 'feuilles de lasagnes':[1,'paquet'],'pain':[2,'pièce'],'beurre':[30,'g',250],'cornichons':[1,'pot'],'jambon sec':[4,'tranches'],
+ 'jambon blanc':[4,'tranches'],'gnocchis':[1,'paquet'],'ail':[1,'pièce'],'parmesan':[50,'g'],'avocat':[2,'pièce'],
+ 'sauce teriyaki':[1,'pot'],'moutarde':[1,'pot'],'fromage a raclette':[400,'g'],'charcuterie a raclette':[300,'g'],
+ 'concombre':[1,'pièce'],'poivron rouge':[1,'pièce'],'sauce soja':[1,'pot'],'echalotes':[2,'pièce'],'fromage rape':[100,'g',200],'cornflakes':[150,'g',375],'chapelure':[20,'g',250],'maizena':[45,'g',400],'sauce huitre':[1,'pot'],"mont d'or":[1,'pièce'],'pain kebab':[4,'pièce'],'tomates':[2,'pièce'],'bouillon de legumes':[1,'boîte']
+};
+var ALIAS={'poulet':'Blanc de poulet','steak hache surgele':'Steak haché','steak hache':'Steak haché','poivron':'Poivron rouge','oignons':'Oignon',
+ 'jus de citron':'Citron','carotte':'Carottes','epinard':'Épinards','epinards':'Épinards','pomme de terre':'Pommes de terre','patates':'Pommes de terre',
+ 'spaghetti':'Spaghettis','tagliatelle':'Tagliatelles','oeuf':'Œufs','oeufs':'Œufs','brocoli':'Brocolis','creme':'Crème fraîche','boeuf':'Bœuf','chevre':'Fromage de chèvre','algues':'Algues nori','veau':'Veau pour blanquette','porc':'Porc à sauter','jambon':'Jambon blanc','steak de boeuf ou de porc':'Steak de bœuf'};
+var FRESHR={'crevettes':'Poissonnerie','fruits de mer':'Poissonnerie','saumon':'Poissonnerie','steak hache':'Boucherie','epinards':'Fruits et légumes','petits pois':'Fruits et légumes','brocolis':'Fruits et légumes','frites':'Fruits et légumes'};
+
+/* ---------- Repas de départ (format identique à l'import ChatGPT) ---------- */
+var SEED=[
+"REPAS : Pâtes carbonara|CATÉGORIE : Pâtes et nouilles|- Pâtes | 200 | g | Épicerie salée | sec|- Lardons | ? | | Charcuterie traiteur | frais|- Crème fraîche | ? | | Crèmerie | frais",
+"REPAS : Pâtes aux crevettes|CATÉGORIE : Pâtes et nouilles|- Pâtes | 200 | g | Épicerie salée | sec|- Crevettes | ? | | Poissonnerie | surgelé|- Crème fraîche | ? | | Crèmerie | frais",
+"REPAS : Pâtes aux fruits de mer|CATÉGORIE : Pâtes et nouilles|- Pâtes | 200 | g | Épicerie salée | sec|- Fruits de mer | ? | | Poissonnerie | surgelé|- Crème fraîche | ? | | Crèmerie | frais",
+"REPAS : Pâtes au poivre et au steak|CATÉGORIE : Pâtes et nouilles|- Pâtes | 200 | g | Épicerie salée | sec|- Steak de bœuf | 2 | pièce | Boucherie | frais|- Crème fraîche | ? | | Crèmerie | frais|- Poivre | ? | | Épicerie salée | sec",
+"REPAS : Tagliatelles saumon et Boursin|CATÉGORIE : Pâtes et nouilles|- Tagliatelles | 200 | g | Épicerie salée | sec|- Saumon | ? | | Poissonnerie | surgelé|- Boursin | ? | | Crèmerie | frais",
+"REPAS : Spaghettis ail et parmesan|CATÉGORIE : Pâtes et nouilles|- Spaghettis | 200 | g | Épicerie salée | sec|- Ail | ? | | Fruits et légumes | frais|- Parmesan | ? | | Crèmerie | frais",
+"REPAS : Gnocchis sauce tomate mozzarella|CATÉGORIE : Pâtes et nouilles|- Gnocchis | ? | | Épicerie salée | sec|- Sauce tomate | ? | | Conserves | conserve|- Mozzarella | ? | | Crèmerie | frais",
+"REPAS : Raviolis|CATÉGORIE : Pâtes et nouilles|- Raviolis | ? | | Épicerie salée | sec",
+"REPAS : Lasagne saumon épinards|CATÉGORIE : Plats complets et traditionnels|- Saumon | ? | | Poissonnerie | surgelé|- Épinards | ? | | Fruits et légumes | surgelé|- Feuilles de lasagnes | ? | | Épicerie salée | sec|- Échalotes | 2~ | pièce | Fruits et légumes | frais|- Beurre | 25~ | g | Crèmerie | frais|- Farine | 25~ | g | Épicerie salée | sec|- Lait | 250~ | ml | Crèmerie | frais|- Fromage râpé | ? | | Crèmerie | frais",
+"REPAS : Riz cantonais|CATÉGORIE : Plats complets et traditionnels|- Riz | ? | | Épicerie salée | sec|- Petits pois | 100~ | g | Fruits et légumes | surgelé|- Poivron rouge | 1 | pièce | Fruits et légumes | frais|- Œufs | 2~ | pièce | Œufs | frais|- Oignon | 1~ | pièce | Fruits et légumes | frais|- Sauce soja | ? | | Épicerie salée | sec",
+"REPAS : Riz au poulet, crème fraîche et moutarde|CATÉGORIE : Plats complets et traditionnels|- Riz | ? | | Épicerie salée | sec|- Blanc de poulet | ? | | Boucherie | frais|- Crème fraîche | ? | | Crèmerie | frais|- Moutarde | ? | | Épicerie salée | sec",
+"REPAS : Riz, avocat et poulet sauce teriyaki|CATÉGORIE : Plats complets et traditionnels|- Riz | ? | | Épicerie salée | sec|- Avocat | ? | | Fruits et légumes | frais|- Blanc de poulet | ? | | Boucherie | frais|- Sauce teriyaki | ? | | Épicerie salée | sec",
+"REPAS : Gratin pommes de terre, lardons et crème|CATÉGORIE : Plats complets et traditionnels|- Pommes de terre | ? | | Fruits et légumes | frais|- Lardons | ? | | Charcuterie traiteur | frais|- Crème fraîche | ? | | Crèmerie | frais",
+"REPAS : Tenders de poulet maison|CATÉGORIE : Viandes et volailles|- Blanc de poulet | ? | | Boucherie | frais|- Yaourt grec | ? | | Crèmerie | frais|- Ail | ? | | Fruits et légumes | frais|- Œufs | 2~ | pièce | Œufs | frais|- Farine | 50~ | g | Épicerie salée | sec|- Cornflakes | ? | | Épicerie salée | sec",
+"REPAS : Burger classique|CATÉGORIE : Burgers, tacos et sandwichs|NOTE : Quantités des sauces Enola et Nino à confirmer.|- Steak haché | 3 | pièce | Boucherie | surgelé|- Pain à burger | 3 | pièce | Pain et boulangerie | frais|- Cheddar en tranches | ? | | Crèmerie | frais|- Sauce Enola | 1 | pot | Épicerie salée | sec|- Sauce Nino | 1 | pot | Épicerie salée | sec|- Salade | ? | | Fruits et légumes | frais|- Bacon | ? | | Charcuterie traiteur | frais|- Oignon | ? | | Fruits et légumes | frais",
+"REPAS : Burger au roquefort|CATÉGORIE : Burgers, tacos et sandwichs|- Steak haché | 3 | pièce | Boucherie | surgelé|- Pain à burger | 3 | pièce | Pain et boulangerie | frais|- Roquefort | ? | | Crèmerie | frais",
+"REPAS : Burgers sauce cheddar|CATÉGORIE : Burgers, tacos et sandwichs|- Steak haché | ? | | Boucherie | surgelé|- Pain à burger | ? | | Pain et boulangerie | frais|- Sauce cheddar | ? | | Crèmerie | frais",
+"REPAS : Steak haché et frites|CATÉGORIE : Viandes et volailles|- Steak haché | 2 | pièce | Boucherie | surgelé|- Frites | ? | | Fruits et légumes | surgelé",
+"REPAS : Sandwich steak haché frites|CATÉGORIE : Burgers, tacos et sandwichs|- Steak haché | ? | | Boucherie | surgelé|- Frites | ? | | Fruits et légumes | surgelé|- Pain | ? | | Pain et boulangerie | frais",
+"REPAS : Boulettes de viande sauce tomate|CATÉGORIE : Viandes et volailles|- Steak haché | ? | | Boucherie | surgelé|- Sauce tomate | ? | | Conserves | conserve|- Chapelure | ? | | Épicerie salée | sec|- Oignon | 1~ | pièce | Fruits et légumes | frais|- Ail | ? | | Fruits et légumes | frais|- Riz | 120~ | g | Épicerie salée | sec",
+"REPAS : Bœuf à l'oignon|CATÉGORIE : Viandes et volailles|- Bœuf | ? | | Boucherie | frais|- Oignon | 2~ | pièce | Fruits et légumes | frais|- Sauce soja | ? | | Épicerie salée | sec|- Maïzena | ? | | Épicerie sucrée | sec|- Sauce huître | ? | | Épicerie salée | sec|- Riz | 120~ | g | Épicerie salée | sec",
+"REPAS : Épinards, poulet et salade de carottes râpées|CATÉGORIE : Viandes et volailles|- Blanc de poulet | ? | | Boucherie | frais|- Épinards | ? | | Fruits et légumes | surgelé|- Salade | ? | | Fruits et légumes | frais|- Carottes | ? | | Fruits et légumes | frais",
+"REPAS : Brocolis nature au poulet|CATÉGORIE : Viandes et volailles|- Brocolis | ? | | Fruits et légumes | surgelé|- Blanc de poulet | ? | | Boucherie | frais",
+"REPAS : Brocolis au poivre avec vrai steak|CATÉGORIE : Viandes et volailles|- Brocolis | ? | | Fruits et légumes | surgelé|- Steak de bœuf | ? | | Boucherie | frais|- Poivre | ? | | Épicerie salée | sec",
+"REPAS : Brocolis au poivre avec steak de porc|CATÉGORIE : Viandes et volailles|- Brocolis | ? | | Fruits et légumes | surgelé|- Steak de porc | ? | | Boucherie | frais|- Poivre | ? | | Épicerie salée | sec",
+"REPAS : Concombre farci au thon|CATÉGORIE : Plats complets et traditionnels|- Concombre | 1 | pièce | Fruits et légumes | frais|- Thon | ? | | Conserves | conserve|- Mayonnaise | ? | | Épicerie salée | sec|- Fromage blanc | ? | | Crèmerie | frais",
+"REPAS : Croc Boursin saumon mozzarella|CATÉGORIE : Burgers, tacos et sandwichs|- Boursin | ? | | Crèmerie | frais|- Saumon | ? | | Poissonnerie | surgelé|- Mozzarella | ? | | Crèmerie | frais|- Pain de mie | 1 | paquet | Pain et boulangerie | frais",
+"REPAS : Crêpes aux épinards|CATÉGORIE : Plats complets et traditionnels|- Épinards | ? | | Fruits et légumes | surgelé|- Farine | ? | | Épicerie salée | sec|- Lait | ? | | Crèmerie | frais|- Œufs | ? | | Œufs | frais",
+"REPAS : Potimarron au fromage coulant et pommes de terre|CATÉGORIE : Plats complets et traditionnels|- Potimarron | ? | | Fruits et légumes | frais|- Mont d'Or | ? | | Crèmerie | frais|- Pommes de terre | 600~ | g | Fruits et légumes | frais|- Ail | ? | | Fruits et légumes | frais",
+"REPAS : Kebab aux PST|CATÉGORIE : Burgers, tacos et sandwichs|- Pain kebab | ? | | Pain et boulangerie | frais|- Tomates | ? | | Fruits et légumes | frais|- Salade | ? | | Fruits et légumes | frais|- Oignon | 2~ | pièce | Fruits et légumes | frais|- Ail | ? | | Fruits et légumes | frais|- Yaourt grec | ? | | Crèmerie | frais|- Citron | ? | | Fruits et légumes | frais|- Sauce soja | ? | | Épicerie salée | sec|- Bouillon de légumes | ? | | Épicerie salée | sec|- Ciboulette | ? | | Fruits et légumes | frais",
+"REPAS : Taboulé|CATÉGORIE : Soupes, salades et entrées|- Semoule | ? | | Épicerie salée | sec|- Concombre | 1 | pièce | Fruits et légumes | frais|- Avocat | 2 | pièce | Fruits et légumes | frais|- Poivron rouge | 1 | pièce | Fruits et légumes | frais|- Citron | ? | | Fruits et légumes | frais",
+"REPAS : Soupe de chou, carottes, pommes de terre, oignons et céleri|CATÉGORIE : Soupes, salades et entrées|- Chou | ? | | Fruits et légumes | frais|- Carottes | ? | | Fruits et légumes | frais|- Pommes de terre | ? | | Fruits et légumes | frais|- Oignon | ? | | Fruits et légumes | frais|- Céleri | ? | | Fruits et légumes | frais",
+"REPAS : Sandwich beurre, cornichons et jambon sec|CATÉGORIE : Burgers, tacos et sandwichs|- Pain | ? | | Pain et boulangerie | frais|- Beurre | ? | | Crèmerie | frais|- Cornichons | ? | | Conserves | conserve|- Jambon sec | ? | | Charcuterie traiteur | frais",
+"REPAS : Sandwich beurre, cornichons et jambon blanc|CATÉGORIE : Burgers, tacos et sandwichs|- Pain | ? | | Pain et boulangerie | frais|- Beurre | ? | | Crèmerie | frais|- Cornichons | ? | | Conserves | conserve|- Jambon blanc | ? | | Charcuterie traiteur | frais",
+"REPAS : Raclette|CATÉGORIE : Plats complets et traditionnels|- Fromage à raclette | 400~ | g | Crèmerie | frais|- Charcuterie à raclette | 300~ | g | Charcuterie traiteur | frais|- Pommes de terre | 700~ | g | Fruits et légumes | frais|- Cornichons | ? | | Conserves | conserve|- Salade | ? | | Fruits et légumes | frais"
+].map(function(s){return s.split(/\|(?=- |CATÉGORIE|NOTE)/).join('\n')}).join('\n\n');
+
+
+/* Ingrédients : nom | rayon | type | quantité pour 2 | unité | taille du paquet (quantité vide = valeur standard déjà connue) */
+var CATALOG=`Pâtes|Épicerie salée|sec
+Spaghettis|Épicerie salée|sec
+Riz|Épicerie salée|sec
+Semoule|Épicerie salée|sec
+Blanc de poulet|Boucherie|frais
+Crème fraîche|Crèmerie|frais
+Lardons|Charcuterie traiteur|frais
+Épinards|Fruits et légumes|surgelé
+Petits pois|Fruits et légumes|surgelé
+Farine|Épicerie salée|sec
+Lait|Crèmerie|frais
+Œufs|Œufs|frais
+Thon|Conserves|conserve
+Mayonnaise|Épicerie salée|sec
+Parmesan|Crèmerie|frais
+Oignon|Fruits et légumes|frais
+Frites|Fruits et légumes|surgelé
+Steak haché|Boucherie|surgelé
+Yaourt grec|Crèmerie|frais
+Citron|Fruits et légumes|frais
+Sauce tomate|Conserves|conserve
+Boursin|Crèmerie|frais
+Saumon|Poissonnerie|surgelé
+Mozzarella|Crèmerie|frais
+Pain de mie|Pain et boulangerie|frais
+Carottes|Fruits et légumes|frais
+Pommes de terre|Fruits et légumes|frais
+Pain|Pain et boulangerie|frais
+Beurre|Crèmerie|frais
+Jambon blanc|Charcuterie traiteur|frais
+Ail|Fruits et légumes|frais
+Avocat|Fruits et légumes|frais
+Moutarde|Épicerie salée|sec
+Concombre|Fruits et légumes|frais
+Poivron rouge|Fruits et légumes|frais
+Sauce soja|Épicerie salée|sec
+Fromage râpé|Crèmerie|frais
+Salade|Fruits et légumes|frais
+Tomates|Fruits et légumes|frais
+Bouillon de légumes|Épicerie salée|sec
+Fromage à raclette|Crèmerie|frais
+Feuilles de lasagnes|Épicerie salée|sec
+Fromage de chèvre|Crèmerie|frais|1|pièce
+Miel|Épicerie sucrée|sec|1|pot
+Algues nori|Épicerie salée|sec|1|paquet
+Courgettes|Fruits et légumes|frais|2|pièce
+Tomates cerises|Fruits et légumes|frais|250|g
+Champignons|Fruits et légumes|frais|250|g
+Macaronis|Épicerie salée|sec|200|g|500
+Nouilles épicées|Épicerie salée|sec|2|paquet
+Nouilles chinoises|Épicerie salée|sec|1|paquet
+Poulet entier|Boucherie|frais|1|pièce
+Lait de coco|Conserves|conserve|1|boîte
+Curry en poudre|Épicerie salée|sec|1|pot
+Bœuf à bourguignon|Boucherie|frais|500|g
+Vin rouge|Boissons|sec|1|pièce
+Veau pour blanquette|Boucherie|frais|400|g
+Cuisse de canard confite|Boucherie|frais|2|pièce
+Tome fraîche|Crèmerie|frais|250|g
+Magret de canard|Boucherie|frais|2|pièce
+Porc à sauter|Boucherie|frais|400|g
+Sucre|Épicerie sucrée|sec|60|g|1000
+Gigot d'agneau|Boucherie|frais|1|pièce
+Flageolets|Conserves|conserve|1|boîte
+Beurre de cacahuète|Épicerie sucrée|sec|1|pot
+Concentré de tomates|Conserves|conserve|1|boîte
+Riz à sushi|Épicerie salée|sec|150|g|500
+Fromage frais|Crèmerie|frais|1|pot
+Pâte brisée|Crèmerie|frais|1|pièce
+Aubergines|Fruits et légumes|frais|2|pièce
+Merguez|Boucherie|frais|4|pièce
+Pois chiches|Conserves|conserve|1|boîte
+Ras el hanout|Épicerie salée|sec|1|pot
+Saucisses|Boucherie|frais|4|pièce
+Butternut|Fruits et légumes|frais|1|pièce
+Pain panini|Pain et boulangerie|frais|2|pièce
+Saumon fumé|Poissonnerie|frais|1|paquet
+Wraps|Pain et boulangerie|frais|1|paquet
+Levure boulangère|Épicerie sucrée|sec|1|paquet
+Pâte à pizza|Crèmerie|frais|1|pièce
+Pepperoni|Charcuterie traiteur|frais|1|paquet
+Poireaux|Fruits et légumes|frais|2|pièce
+Pâte feuilletée|Crèmerie|frais|1|pièce
+Chou rouge|Fruits et légumes|frais|1|pièce
+Feuilles de brick|Crèmerie|frais|1|paquet
+Pâte de curry rouge|Épicerie salée|sec|1|pot
+Pommes|Fruits et légumes|frais|3|pièce
+Oranges|Fruits et légumes|frais|2|pièce
+Bananes|Fruits et légumes|frais|2|pièce
+Kiwis|Fruits et légumes|frais|2|pièce
+Maïs|Conserves|conserve|1|boîte`;
+var P='Pâtes et nouilles',V='Viandes et volailles',C='Plats complets et traditionnels',B='Burgers, tacos et sandwichs',T='Pizzas, tartes et bricks',S='Soupes, salades et entrées';
+/* Repas issus des notes : nom | catégorie | ingrédients (nom ou nom=quantité). Recettes classiques ramenées à 2 personnes. */
+var MEALS2=[
+["Pâtes chèvre miel",P,"Pâtes;Fromage de chèvre;Miel;Crème fraîche"],
+["Pâtes au thon et à l'algue",P,"Pâtes;Thon;Algues nori;Sauce soja;Mayonnaise"],
+["Spaghettis aux épluchures de courgette",P,"Spaghettis;Courgettes;Ail;Parmesan"],
+["Pâtes saumon tomates cerises",P,"Pâtes;Saumon;Tomates cerises;Crème fraîche"],
+["Pâtes oignons confits au four",P,"Pâtes;Oignon=3;Ail;Crème fraîche;Parmesan"],
+["Pâtes champignons crème",P,"Pâtes;Champignons;Crème fraîche;Ail"],
+["Gratin de pâtes",P,"Pâtes;Jambon blanc;Crème fraîche;Fromage râpé"],
+["Mac & cheese",P,"Macaronis;Lait;Fromage râpé=150;Beurre;Farine=25"],
+["Spicy noodle",P,"Nouilles épicées;Œufs"],
+["Nouilles sautées poulet légumes",P,"Nouilles chinoises;Blanc de poulet;Carottes=200;Poivron rouge;Oignon;Sauce soja"],
+["Poulet rôti",V,"Poulet entier;Pommes de terre=700;Ail"],
+["Escalope de poulet sauce crème champignons",V,"Blanc de poulet;Champignons;Crème fraîche;Oignon"],
+["Poulet curry coco",V,"Blanc de poulet;Lait de coco;Curry en poudre;Oignon;Riz"],
+["Bœuf bourguignon",C,"Bœuf à bourguignon;Carottes;Oignon=2;Lardons;Vin rouge"],
+["Blanquette de veau",C,"Veau pour blanquette;Carottes;Champignons;Oignon;Crème fraîche;Beurre;Farine=30;Riz"],
+["Aligot et cuisse de canard confite",V,"Cuisse de canard confite;Pommes de terre=600;Tome fraîche;Crème fraîche;Ail"],
+["Magret de canard",V,"Magret de canard;Pommes de terre=600"],
+["Porc au caramel",C,"Porc à sauter;Sucre;Sauce soja;Oignon;Ail;Riz"],
+["Gigot d'agneau",V,"Gigot d'agneau;Flageolets;Ail"],
+["Mafé",C,"Blanc de poulet;Beurre de cacahuète;Concentré de tomates;Carottes;Pommes de terre=400;Oignon;Riz"],
+["Lasagne épinards mozzarella",C,"Feuilles de lasagnes;Épinards;Mozzarella=2;Sauce tomate;Crème fraîche;Fromage râpé"],
+["Sushi lasagne",C,"Riz à sushi;Saumon;Avocat=1;Concombre;Algues nori;Fromage frais;Sauce soja"],
+["Hachis Parmentier",C,"Steak haché=4;Pommes de terre;Oignon;Beurre;Lait=100;Fromage râpé=50"],
+["Quiche lorraine",C,"Pâte brisée;Lardons;Œufs=3;Crème fraîche;Fromage râpé"],
+["Moussaka",C,"Aubergines;Steak haché=4;Sauce tomate;Oignon;Lait=250;Farine=25;Beurre;Fromage râpé=50"],
+["Couscous",C,"Semoule;Merguez;Blanc de poulet;Carottes;Courgettes;Pois chiches;Oignon;Ras el hanout"],
+["Saucisse purée",V,"Saucisses;Pommes de terre;Lait=100;Beurre"],
+["Butternut farcie à la viande hachée",C,"Butternut;Steak haché=4;Oignon;Fromage râpé"],
+["Gratin dauphinois",C,"Pommes de terre;Crème fraîche=400;Lait=200;Ail"],
+["Poêlée de courgettes, pommes de terre et œufs",C,"Courgettes;Pommes de terre=500;Œufs=4;Oignon"],
+["Riz à la courgette",C,"Riz;Courgettes;Fromage râpé=50;Ail"],
+["Riz sauté aux légumes",C,"Riz;Carottes=200;Poivron rouge;Œufs;Sauce soja;Oignon;Petits pois=100"],
+["Poivrons farcis",C,"Poivron rouge=2;Steak haché=4;Riz=120;Sauce tomate;Oignon;Fromage râpé=50"],
+["Panini jambon mozzarella",B,"Pain panini;Jambon blanc;Mozzarella"],
+["Panini saumon",B,"Pain panini;Saumon fumé;Boursin;Mozzarella"],
+["Sandwich œuf mayo",B,"Pain de mie;Œufs=4;Mayonnaise;Salade"],
+["Sandwich thon",B,"Pain;Thon;Mayonnaise;Salade;Tomates"],
+["Sandwich merguez frites",B,"Pain;Merguez;Frites"],
+["Wraps au poulet",B,"Wraps;Blanc de poulet;Salade;Tomates"],
+["Wraps au saumon",B,"Wraps;Saumon fumé;Boursin;Concombre;Salade"],
+["Wraps œufs jambon",B,"Wraps;Œufs=4;Jambon blanc;Salade"],
+["Croque-monsieur",B,"Pain de mie;Jambon blanc;Fromage râpé;Beurre"],
+["Pizza maison",T,"Farine=300;Levure boulangère;Sauce tomate;Mozzarella=2;Jambon blanc"],
+["Pizza pepperoni",T,"Pâte à pizza;Sauce tomate;Mozzarella=2;Pepperoni"],
+["Pizza poulet",T,"Pâte à pizza;Sauce tomate;Mozzarella=2;Blanc de poulet=200;Oignon"],
+["Tarte à la carotte",T,"Pâte brisée;Carottes=500;Œufs;Crème fraîche;Fromage râpé"],
+["Tarte aux poireaux",T,"Pâte brisée;Poireaux=3;Lardons;Œufs;Crème fraîche"],
+["Tarte aux concombres",T,"Pâte brisée;Concombre=2;Fromage de chèvre;Œufs;Crème fraîche"],
+["Tarte aux champignons",T,"Pâte brisée;Champignons=400;Œufs;Crème fraîche;Oignon"],
+["Tarte aux tomates",T,"Pâte brisée;Tomates=4;Moutarde;Fromage râpé"],
+["Tarte tatin au chou rouge",T,"Pâte feuilletée;Chou rouge;Oignon;Fromage de chèvre;Miel"],
+["Tarte aux épinards",T,"Pâte brisée;Épinards;Œufs;Crème fraîche"],
+["Tarte raclette",T,"Pâte brisée;Fromage à raclette=300;Pommes de terre=400;Lardons;Crème fraîche"],
+["Bricks aux épinards",T,"Feuilles de brick;Épinards;Œufs;Fromage de chèvre"],
+["Bricks au thon",T,"Feuilles de brick;Thon;Œufs;Fromage râpé"],
+["Bricks saumon poireaux",T,"Feuilles de brick;Saumon;Poireaux;Crème fraîche"],
+["Bricks au fromage",T,"Feuilles de brick;Fromage de chèvre;Mozzarella;Fromage râpé"],
+["Soupe thaï",S,"Lait de coco;Blanc de poulet=200;Champignons=200;Citron;Pâte de curry rouge;Bouillon de légumes"],
+["Soupe de concombre",S,"Concombre=2;Yaourt grec;Ail"],
+["Salade de fruits",S,"Pommes;Oranges;Bananes;Kiwis"],
+["Salade composée au riz",S,"Riz;Thon;Tomates;Concombre;Maïs;Œufs"]
+];
+var RESTOS=[["Burger King",B],["Resto à volonté",C],["Kebab en ville",B],["O'Tacos",B],["Chinois à volonté",C]];
+function buildSeed2(){
+  var cat={};
+  CATALOG.split('\n').forEach(function(l){
+    var q=l.split('|'),k=norm(q[0]);
+    cat[k]={n:q[0],r:q[1],s:q[2]};
+    if(!STD[k]&&q[3]){STD[k]=[parseFloat(q[3]),q[4]].concat(q[5]?[parseFloat(q[5])]:[])}
+  });
+  return MEALS2.map(function(m){
+    var out=['REPAS : '+m[0],'CATÉGORIE : '+m[1]];
+    m[2].split(';').forEach(function(x){
+      var e=x.split('='),k=norm(e[0]),c=cat[k],sd=STD[k];
+      if(!c||!sd){if(window.console) console.warn('Ingrédient inconnu : '+x);return}
+      out.push('- '+c.n+' | '+(e[1]!=null?e[1]+'~':'?')+' | '+sd[1]+' | '+c.r+' | '+c.s);
+    });
+    return out.join('\n');
+  }).join('\n\n');
+}
+
+
+/* Réponse de ChatGPT (d'après les 2 dernières listes de courses) : prioritaire sur les repas non modifiés à la main */
+var GPT=`REPAS : Pâtes carbonara
+- Pâtes | 200 | g | sec
+- Lardons | 1 | paquet | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Pâtes aux crevettes
+- Pâtes | 200 | g | sec
+- Crevettes | 1 | paquet | surgelé
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Pâtes aux fruits de mer
+- Pâtes | 200 | g | sec
+- Fruits de mer | 1 | paquet | surgelé
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Pâtes au poivre et au steak
+- Pâtes | 200 | g | sec
+- Steak de bœuf ou de porc | 1 | pièce | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Tagliatelles saumon et Boursin
+- Tagliatelles | 200 | g | sec
+- Saumon | 1 | paquet | surgelé
+- Boursin | 1 | pot | frais
+REPAS : Spaghettis ail et parmesan
+- Spaghettis | 200 | g | sec
+- Ail | 1 | pièce | frais
+- Parmesan | 1 | pot | frais
+REPAS : Gnocchis sauce tomate mozzarella
+- Gnocchis | 1 | paquet | frais
+- Sauce tomate | 1 | boîte | conserve
+- Mozzarella | 1 | pièce | frais
+REPAS : Raviolis
+
+- Raviolis | 1 | paquet | conserve
+
+REPAS : Lasagne saumon épinards
+- Feuilles de lasagnes | 1 | paquet | sec
+- Saumon | 1 | paquet | surgelé
+- Épinards | 500 | g | surgelé
+REPAS : Riz cantonais
+- Riz | 200 | g | sec
+- Petits pois | 1 | paquet | surgelé
+- Poivron | 1 | pièce | frais
+REPAS : Riz au poulet, crème fraîche et moutarde
+- Riz | 200 | g | sec
+- Poulet | 2 | pièces | frais
+- Crème fraîche | 0,5 | pot | frais
+- Moutarde | 1 | pot | frais
+REPAS : Riz, avocat et poulet sauce teriyaki
+- Riz | 200 | g | sec
+- Avocat | 1 | pièce | frais
+- Poulet | 2 | pièces | frais
+- Sauce teriyaki | 1 | pot | ?
+REPAS : Gratin pommes de terre, lardons et crème
+- Pommes de terre | 1 | kg | frais
+- Lardons | 2 | paquets | frais
+- Crème fraîche | 1 | pot | frais
+REPAS : Tenders de poulet maison
+
+- Blanc de poulet | 2 | pièces | frais
+
+REPAS : Burger classique
+- Pain à burger | 3 | pièces | sec
+- Steak haché | 3 | pièces | surgelé
+- Cheddar en tranches | 3 | tranches | frais
+- Salade | 1 | pièce | frais
+- Bacon | 1 | paquet | frais
+- Oignon | 1 | pièce | frais
+- Sauce Enola | 1 | pot | frais
+- Sauce Nino | 1 | pot | frais
+REPAS : Burger au roquefort
+- Pain à burger | 3 | pièces | sec
+- Steak haché | 3 | pièces | surgelé
+- Roquefort | 1 | morceau | frais
+- Salade | 1 | pièce | frais
+- Bacon | 1 | paquet | frais
+- Oignon | 1 | pièce | frais
+REPAS : Burgers sauce cheddar
+- Pain à burger | 3 | pièces | sec
+- Steak haché | 3 | pièces | surgelé
+- Cheddar | 1 | paquet | frais
+- Sauce cheddar | 1 | pot | frais
+- Salade | 1 | pièce | frais
+- Bacon | 1 | paquet | frais
+- Oignon | 1 | pièce | frais
+REPAS : Steak haché et frites
+- Steak haché | 2 | pièces | surgelé
+- Frites | 1 | paquet | surgelé
+REPAS : Sandwich steak haché frites
+- Pain à sandwich | 2 | pièces | sec
+- Steak haché | 2 | pièces | surgelé
+- Frites | 1 | paquet | surgelé
+REPAS : Boulettes de viande sauce tomate
+- Steak haché surgelé | 3 | pièces | surgelé
+- Sauce tomate | 1 | boîte | conserve
+- Pâtes | 200 | g | sec
+REPAS : Bœuf à l'oignon
+- Bœuf | ? | g | frais
+- Oignons | ? | pièces | frais
+REPAS : Épinards, poulet et salade de carottes râpées
+- Poulet | 2 | pièces | frais
+- Épinards | ? | g | frais
+- Salade | 1 | pièce | frais
+- Carottes | 2 | pièces | frais
+REPAS : Brocolis nature au poulet
+- Brocolis | 1 | pièce | frais
+- Poulet | 2 | pièces | frais
+REPAS : Brocolis au poivre avec vrai steak
+- Brocolis | 1 | pièce | frais
+- Steak de bœuf | 2 | pièces | frais
+REPAS : Brocolis au poivre avec steak de porc
+- Brocolis | 1 | pièce | frais
+- Steak de porc | 2 | pièces | frais
+REPAS : Concombre farci au thon
+- Concombre | 1 | pièce | frais
+- Thon | 1 | boîte | conserve
+- Mayonnaise | 1 | pot | frais
+- Fromage blanc | 1 | pot | frais
+REPAS : Croc Boursin saumon mozzarella
+- Boursin | 1 | pot | frais
+- Saumon | 1 | paquet | surgelé
+- Mozzarella | 1 | pièce | frais
+- Pain de mie | 1 | paquet | sec
+REPAS : Crêpes aux épinards
+
+- Épinards | 1 | boîte ou paquet | conserve ou surgelé
+
+REPAS : Potimarron au fromage coulant et pommes de terre
+- Potimarron | 1 | pièce | frais
+- Fromage pour potimarron coulant | 1 | pièce | frais
+- Pommes de terre | 1 | kg | frais
+REPAS : Kebab aux PST
+- Pain kebab | ? | pièces | sec
+- Sauce kebab | ? | pot | frais
+REPAS : Taboulé
+- Concombre | 1 | pièce | frais
+- Avocat | 1 | pièce | frais
+- Poivron rouge | 1 | pièce | frais
+REPAS : Soupe de chou, carottes, pommes de terre, oignons et céleri
+- Chou | 0,5 | pièce | frais
+- Carottes | 2 | pièces | frais
+- Pommes de terre | 2 | pièces | frais
+- Oignons | 1 | pièce | frais
+- Céleri | ? | pièce | frais
+REPAS : Sandwich beurre, cornichons et jambon sec
+- Pain à sandwich | 2 | pièces | sec
+- Beurre | 1 | paquet | frais
+- Cornichons | 1 | bocal | conserve
+- Jambon sec | 2 | tranches | frais
+REPAS : Sandwich beurre, cornichons et jambon blanc
+- Pain à sandwich | 2 | pièces | sec
+- Beurre | 1 | paquet | frais
+- Cornichons | 1 | bocal | conserve
+- Jambon blanc | 2 | tranches | frais
+REPAS : Raclette
+- Fromage à raclette | 1 | paquet | frais
+- Charcuterie à raclette | 1 | paquet | frais
+- Pommes de terre | 1 | kg | frais
+REPAS : Pâtes chèvre miel
+- Pâtes | 200 | g | sec
+- Chèvre | 1 | bûche | frais
+- Miel | 1 | pot | ?
+REPAS : Pâtes au thon et à l'algue
+- Pâtes | 200 | g | sec
+- Thon | 1 | boîte | conserve
+- Algues | ? | paquet | sec
+REPAS : Spaghettis aux épluchures de courgette
+- Spaghettis | 200 | g | sec
+- Courgettes | 2 | pièces | frais
+REPAS : Pâtes saumon tomates cerises
+- Pâtes | 200 | g | sec
+- Saumon | 1 | paquet | surgelé
+- Tomates cerises | 1 | barquette | frais
+REPAS : Pâtes oignons confits au four
+- Pâtes | 200 | g | sec
+- Oignons | 2 | pièces | frais
+REPAS : Pâtes champignons crème
+- Pâtes | 200 | g | sec
+- Champignons | 1 | boîte | conserve
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Gratin de pâtes
+- Pâtes | 200 | g | sec
+- Crème fraîche | 0,5 | pot | frais
+- Fromage râpé | 1 | paquet | frais
+REPAS : Mac & cheese
+- Pâtes | 200 | g | sec
+- Cheddar | 1 | paquet | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Spicy noodle
+
+- Nouilles | 2 | paquets | sec
+
+REPAS : Nouilles sautées poulet légumes
+- Nouilles | 200 | g | sec
+- Poulet | 2 | pièces | frais
+- Légumes | ? | g | frais
+REPAS : Poulet rôti
+
+- Poulet entier | 1 | pièce | frais
+
+REPAS : Escalope de poulet sauce crème champignons
+- Escalopes de poulet | 2 | pièces | frais
+- Crème fraîche | 0,5 | pot | frais
+- Champignons | 1 | boîte | conserve
+REPAS : Poulet curry coco
+- Poulet | 2 | pièces | frais
+- Lait de coco | 2 | boîtes | conserve
+- Riz | 200 | g | sec
+REPAS : Bœuf bourguignon
+- Bœuf à bourguignon | ? | g | frais
+- Carottes | 2 | pièces | frais
+- Oignons | 1 | pièce | frais
+REPAS : Blanquette de veau
+- Veau | ? | g | frais
+- Carottes | 2 | pièces | frais
+- Champignons | 1 | boîte | conserve
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Aligot et cuisse de canard confite
+- Aligot | 1 | paquet | frais
+- Cuisses de canard confites | 2 | pièces | conserve
+REPAS : Magret de canard
+
+- Magret de canard | 1 | pièce | frais
+
+REPAS : Porc au caramel
+- Porc | ? | g | frais
+- Riz | 200 | g | sec
+REPAS : Gigot d'agneau
+
+- Gigot d'agneau | 1 | pièce | frais
+
+REPAS : Mafé
+- Poulet | 2 | pièces | frais
+- Pâte d'arachide | 1 | pot | ?
+- Riz | 200 | g | sec
+REPAS : Lasagne épinards mozzarella
+- Feuilles de lasagnes | 1 | paquet | sec
+- Épinards | 500 | g | surgelé
+- Mozzarella | 1 | pièce | frais
+REPAS : Sushi lasagne
+- Feuilles de lasagnes | 1 | paquet | sec
+- Saumon | 1 | paquet | surgelé
+- Avocat | 1 | pièce | frais
+- Fromage frais | 1 | pot | frais
+REPAS : Hachis Parmentier
+- Pommes de terre | 1 | kg | frais
+- Viande hachée | 300 | g | frais
+REPAS : Quiche lorraine
+- Pâte brisée | 1 | pièce | frais
+- Lardons | 1 | paquet | frais
+- Crème fraîche | 0,5 | pot | frais
+- Œufs | 3 | pièces | frais
+REPAS : Moussaka
+- Aubergines | 2 | pièces | frais
+- Viande hachée | 300 | g | frais
+- Sauce tomate | 1 | boîte | conserve
+REPAS : Couscous
+- Semoule | 200 | g | sec
+- Légumes pour couscous | ? | g | frais
+- Viande pour couscous | ? | g | frais
+REPAS : Saucisse purée
+- Saucisses | 2 | pièces | frais
+- Pommes de terre | 1 | kg | frais
+REPAS : Butternut farcie à la viande hachée
+- Butternut | 1 | pièce | frais
+- Viande hachée | 300 | g | frais
+REPAS : Gratin dauphinois
+- Pommes de terre | 1 | kg | frais
+- Crème fraîche | 1 | pot | frais
+REPAS : Poêlée de courgettes, pommes de terre et œufs
+- Courgettes | 2 | pièces | frais
+- Pommes de terre | 500 | g | frais
+- Œufs | 2 | pièces | frais
+REPAS : Riz à la courgette
+- Riz | 200 | g | sec
+- Courgette | 1 | pièce | frais
+REPAS : Riz sauté aux légumes
+- Riz | 200 | g | sec
+- Légumes | ? | g | frais
+REPAS : Poivrons farcis
+- Poivrons | 2 | pièces | frais
+- Viande hachée | 300 | g | frais
+REPAS : Panini jambon mozzarella
+- Pain panini | 2 | pièces | sec
+- Jambon | 2 | tranches | frais
+- Mozzarella | 1 | pièce | frais
+REPAS : Panini saumon
+- Pain panini | 2 | pièces | sec
+- Saumon | 1 | paquet | surgelé
+REPAS : Sandwich œuf mayo
+- Pain à sandwich | 2 | pièces | sec
+- Œufs | 2 | pièces | frais
+- Mayonnaise | 1 | pot | frais
+REPAS : Sandwich thon
+- Pain à sandwich | 2 | pièces | sec
+- Thon | 1 | boîte | conserve
+REPAS : Sandwich merguez frites
+- Pain à sandwich | 2 | pièces | sec
+- Merguez | 2 | pièces | frais
+- Frites | 1 | paquet | surgelé
+REPAS : Wraps au poulet
+- Wraps | 2 | pièces | sec
+- Poulet | 2 | pièces | frais
+REPAS : Wraps au saumon
+- Wraps | 2 | pièces | sec
+- Saumon | 1 | paquet | surgelé
+REPAS : Wraps œufs jambon
+- Wraps | 2 | pièces | sec
+- Œufs | 2 | pièces | frais
+- Jambon | 2 | tranches | frais
+REPAS : Croque-monsieur
+- Pain de mie | 4 | tranches | sec
+- Jambon | 2 | tranches | frais
+- Fromage en tranches | 2 | tranches | frais
+REPAS : Pizza maison
+- Pâte à pizza | 2 | pièces | frais
+- Sauce tomate | 1 | boîte | conserve
+- Fromage râpé | 1 | paquet | frais
+REPAS : Pizza pepperoni
+- Pâte à pizza | 2 | pièces | frais
+- Sauce tomate | 1 | boîte | conserve
+- Pepperoni | 1 | paquet | frais
+- Fromage râpé | 1 | paquet | frais
+REPAS : Pizza poulet
+- Pâte à pizza | 2 | pièces | frais
+- Sauce tomate | 1 | boîte | conserve
+- Poulet | 2 | pièces | frais
+- Fromage râpé | 1 | paquet | frais
+REPAS : Tarte à la carotte
+- Pâte brisée | 1 | pièce | frais
+- Carottes | 3 | pièces | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Tarte aux poireaux
+- Pâte brisée | 1 | pièce | frais
+- Poireaux | 2 | pièces | frais
+- Crème fraîche | 0,5 | pot | frais
+- Œufs | 2 | pièces | frais
+REPAS : Tarte aux concombres
+- Pâte brisée | 1 | pièce | frais
+- Concombre | 1 | pièce | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Tarte aux champignons
+- Pâte brisée | 1 | pièce | frais
+- Champignons | 1 | boîte | conserve
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Tarte aux tomates
+- Pâte brisée | 1 | pièce | frais
+- Tomates | 3 | pièces | frais
+- Fromage râpé | 1 | paquet | frais
+REPAS : Tarte tatin au chou rouge
+- Pâte feuilletée | 1 | pièce | frais
+- Chou rouge | 0,5 | pièce | frais
+REPAS : Tarte aux épinards
+- Pâte brisée | 1 | pièce | frais
+- Épinards | 500 | g | surgelé
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Tarte raclette
+- Pâte brisée | 1 | pièce | frais
+- Fromage à raclette | 1 | paquet | frais
+- Charcuterie | 1 | paquet | frais
+REPAS : Bricks aux épinards
+- Feuilles de brick | 1 | paquet | frais
+- Épinards | 500 | g | surgelé
+REPAS : Bricks au thon
+- Feuilles de brick | 1 | paquet | frais
+- Thon | 1 | boîte | conserve
+REPAS : Bricks saumon poireaux
+- Feuilles de brick | 1 | paquet | frais
+- Saumon | 1 | paquet | surgelé
+- Poireaux | 2 | pièces | frais
+REPAS : Bricks au fromage
+- Feuilles de brick | 1 | paquet | frais
+- Fromage | 1 | paquet | frais
+REPAS : Soupe thaï
+- Nouilles | 200 | g | sec
+- Poulet | 2 | pièces | frais
+REPAS : Soupe de concombre
+- Concombre | 2 | pièces | frais
+- Crème fraîche | 0,5 | pot | frais
+REPAS : Salade de fruits
+
+- Fruits variés | 4 | pièces | frais
+
+REPAS : Salade composée au riz
+- Riz | 200 | g | sec
+- Salade | 1 | pièce | frais
+- Tomates | 2 | pièces | frais
+- Concombre | 1 | pièce | frais
+- Maïs | 1 | boîte | conserve`;
+var GPT_GROUPS=[[/^(pates|macaronis|spaghettis|tagliatelles)$/,'pasta'],[/^pain|^wraps/,'bread'],[/poulet/,'chicken'],[/^steak hache|^viande hachee/,'mince'],[/^fromage (rape|en tranches)$|^fromage$|^cheddar/,'cheese'],[/^saumon/,'salmon'],[/^creme/,'cream'],[/^oignon|^echalote/,'onion'],[/^pate a pizza|^farine$|^levure/,'dough'],[/^nouilles/,'noodle']];
+function gptKey(nm){var n=norm(nm);for(var i=0;i<GPT_GROUPS.length;i++){if(GPT_GROUPS[i][0].test(n)) return GPT_GROUPS[i][1]}return n}
+var GPT_GENERIC=/^(legumes|legumes pour couscous|viande pour couscous)$/;
+var SEED3=`REPAS : Pâtes carbonara
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Lardons | 1 | paquet | Charcuterie traiteur | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+
+REPAS : Pâtes aux crevettes
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Crevettes | 1 | paquet | Poissonnerie | surgelé
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+
+REPAS : Pâtes aux fruits de mer
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Fruits de mer | 1 | paquet | Poissonnerie | surgelé
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+
+REPAS : Pâtes au poivre et au steak
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Steak de bœuf | 1 | pièce | Boucherie | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Poivre | 1 | pot | Épicerie salée | sec
+
+REPAS : Tagliatelles saumon et Boursin
+CATÉGORIE : Pâtes et nouilles
+- Tagliatelles | 200 | g | Épicerie salée | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Boursin | 1 | pot | Crèmerie | frais
+
+REPAS : Spaghettis ail et parmesan
+CATÉGORIE : Pâtes et nouilles
+- Spaghettis | 200 | g | Épicerie salée | sec
+- Ail | 1 | pièce | Fruits et légumes | frais
+- Parmesan | 1 | pot | Crèmerie | frais
+
+REPAS : Gnocchis sauce tomate mozzarella
+CATÉGORIE : Pâtes et nouilles
+- Gnocchis | 1 | paquet | Épicerie salée | frais
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Mozzarella | 1 | pièce | Crèmerie | frais
+
+REPAS : Raviolis
+CATÉGORIE : Pâtes et nouilles
+- Raviolis | 1 | paquet | Épicerie salée | conserve
+
+REPAS : Lasagne saumon épinards
+CATÉGORIE : Plats complets et traditionnels
+- Feuilles de lasagnes | 1 | paquet | Épicerie salée | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Épinards | 500 | g | Fruits et légumes | surgelé
+- Échalotes | 2 | pièce | Fruits et légumes | frais
+- Beurre | 1 | paquet | Crèmerie | frais
+- Farine | 25 | g | Épicerie salée | sec
+- Lait | 250 | ml | Crèmerie | frais
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+
+REPAS : Riz cantonais
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Petits pois | 1 | paquet | Fruits et légumes | surgelé
+- Poivron rouge | 1 | pièce | Fruits et légumes | frais
+- Œufs | 2 | pièce | Œufs | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Sauce soja | 1 | pot | Épicerie salée | sec
+
+REPAS : Riz au poulet, crème fraîche et moutarde
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Moutarde | 1 | pot | Épicerie salée | frais
+
+REPAS : Riz, avocat et poulet sauce teriyaki
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Avocat | 1 | pièce | Fruits et légumes | frais
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Sauce teriyaki | 1 | pot | Épicerie salée | sec
+
+REPAS : Gratin pommes de terre, lardons et crème
+CATÉGORIE : Plats complets et traditionnels
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Lardons | 2 | paquet | Charcuterie traiteur | frais
+- Crème fraîche | 1 | pot | Crèmerie | frais
+
+REPAS : Tenders de poulet maison
+CATÉGORIE : Viandes et volailles
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Yaourt grec | 1 | pot | Crèmerie | frais
+- Ail | 1 | pièce | Fruits et légumes | frais
+- Œufs | 2 | pièce | Œufs | frais
+- Farine | 50 | g | Épicerie salée | sec
+- Cornflakes | 150 | g | Épicerie salée | sec
+
+REPAS : Burger classique
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à burger | 3 | pièce | Pain et boulangerie | sec
+- Steak haché | 3 | pièce | Boucherie | surgelé
+- Cheddar en tranches | 3 | tranches | Crèmerie | frais
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Bacon | 1 | paquet | Charcuterie traiteur | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Sauce Enola | 1 | pot | Épicerie salée | frais
+- Sauce Nino | 1 | pot | Épicerie salée | frais
+
+REPAS : Burger au roquefort
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à burger | 3 | pièce | Pain et boulangerie | sec
+- Steak haché | 3 | pièce | Boucherie | surgelé
+- Roquefort | 1 | pièce | Crèmerie | frais
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Bacon | 1 | paquet | Charcuterie traiteur | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Burgers sauce cheddar
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à burger | 3 | pièce | Pain et boulangerie | sec
+- Steak haché | 3 | pièce | Boucherie | surgelé
+- Cheddar | 1 | paquet | Crèmerie | frais
+- Sauce cheddar | 1 | pot | Crèmerie | frais
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Bacon | 1 | paquet | Charcuterie traiteur | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Steak haché et frites
+CATÉGORIE : Viandes et volailles
+- Steak haché | 2 | pièce | Boucherie | surgelé
+- Frites | 1 | paquet | Fruits et légumes | surgelé
+
+REPAS : Sandwich steak haché frites
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Steak haché | 2 | pièce | Boucherie | surgelé
+- Frites | 1 | paquet | Fruits et légumes | surgelé
+
+REPAS : Boulettes de viande sauce tomate
+CATÉGORIE : Viandes et volailles
+- Steak haché | 3 | pièce | Boucherie | surgelé
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Pâtes | 200 | g | Épicerie salée | sec
+- Chapelure | 20 | g | Épicerie salée | sec
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Ail | 1 | pièce | Fruits et légumes | frais
+- Riz | 200 | g | Épicerie salée | sec
+
+REPAS : Bœuf à l'oignon
+CATÉGORIE : Viandes et volailles
+- Bœuf | 300~ | g | Boucherie | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Sauce soja | 1 | pot | Épicerie salée | sec
+- Maïzena | 45 | g | Épicerie sucrée | sec
+- Sauce huître | 1 | pot | Épicerie salée | sec
+- Riz | 200 | g | Épicerie salée | sec
+
+REPAS : Épinards, poulet et salade de carottes râpées
+CATÉGORIE : Viandes et volailles
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Carottes | 2 | pièce | Fruits et légumes | frais
+- Épinards | 500~ | g | Fruits et légumes | surgelé
+
+REPAS : Brocolis nature au poulet
+CATÉGORIE : Viandes et volailles
+- Brocolis | 1 | pièce | Fruits et légumes | frais
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+
+REPAS : Brocolis au poivre avec vrai steak
+CATÉGORIE : Viandes et volailles
+- Brocolis | 1 | pièce | Fruits et légumes | frais
+- Steak de bœuf | 2 | pièce | Boucherie | frais
+- Poivre | 1 | pot | Épicerie salée | sec
+
+REPAS : Brocolis au poivre avec steak de porc
+CATÉGORIE : Viandes et volailles
+- Brocolis | 1 | pièce | Fruits et légumes | frais
+- Steak de porc | 2 | pièce | Boucherie | frais
+- Poivre | 1 | pot | Épicerie salée | sec
+
+REPAS : Concombre farci au thon
+CATÉGORIE : Plats complets et traditionnels
+- Concombre | 1 | pièce | Fruits et légumes | frais
+- Thon | 1 | boîte | Conserves | conserve
+- Mayonnaise | 1 | pot | Épicerie salée | frais
+- Fromage blanc | 1 | pot | Crèmerie | frais
+
+REPAS : Croc Boursin saumon mozzarella
+CATÉGORIE : Burgers, tacos et sandwichs
+- Boursin | 1 | pot | Crèmerie | frais
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Mozzarella | 1 | pièce | Crèmerie | frais
+- Pain de mie | 1 | paquet | Pain et boulangerie | sec
+
+REPAS : Crêpes aux épinards
+CATÉGORIE : Plats complets et traditionnels
+- Épinards | 1 | paquet | Fruits et légumes | surgelé
+- Farine | 125 | g | Épicerie salée | sec
+- Lait | 300 | ml | Crèmerie | frais
+- Œufs | 2 | pièce | Œufs | frais
+
+REPAS : Potimarron au fromage coulant et pommes de terre
+CATÉGORIE : Plats complets et traditionnels
+- Potimarron | 1 | pièce | Fruits et légumes | frais
+- Mont d'Or | 1 | pièce | Crèmerie | frais
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Ail | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Kebab aux PST
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain kebab | 4~ | pièce | Pain et boulangerie | sec
+- Sauce kebab | 1~ | pièce | Épicerie salée | frais
+- Tomates | 3 | pièce | Fruits et légumes | frais
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Ail | 1 | pièce | Fruits et légumes | frais
+- Yaourt grec | 1 | pot | Crèmerie | frais
+- Citron | 1 | pièce | Fruits et légumes | frais
+- Sauce soja | 1 | pot | Épicerie salée | sec
+- Bouillon de légumes | 1 | boîte | Épicerie salée | sec
+- Ciboulette | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Taboulé
+CATÉGORIE : Soupes, salades et entrées
+- Concombre | 1 | pièce | Fruits et légumes | frais
+- Avocat | 1 | pièce | Fruits et légumes | frais
+- Poivron rouge | 1 | pièce | Fruits et légumes | frais
+- Semoule | 200 | g | Épicerie salée | sec
+- Citron | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Soupe de chou, carottes, pommes de terre, oignons et céleri
+CATÉGORIE : Soupes, salades et entrées
+- Chou | 0.5 | pièce | Fruits et légumes | frais
+- Carottes | 2 | pièce | Fruits et légumes | frais
+- Pommes de terre | 2 | pièce | Fruits et légumes | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Céleri | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Sandwich beurre, cornichons et jambon sec
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Beurre | 1 | paquet | Crèmerie | frais
+- Cornichons | 1 | pot | Conserves | conserve
+- Jambon sec | 2 | tranches | Charcuterie traiteur | frais
+
+REPAS : Sandwich beurre, cornichons et jambon blanc
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Beurre | 1 | paquet | Crèmerie | frais
+- Cornichons | 1 | pot | Conserves | conserve
+- Jambon blanc | 2 | tranches | Charcuterie traiteur | frais
+
+REPAS : Raclette
+CATÉGORIE : Plats complets et traditionnels
+- Fromage à raclette | 1 | paquet | Crèmerie | frais
+- Charcuterie à raclette | 1 | paquet | Charcuterie traiteur | frais
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Cornichons | 1 | pot | Conserves | conserve
+- Salade | 1 | pièce | Fruits et légumes | frais
+
+REPAS : Pâtes chèvre miel
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Fromage de chèvre | 1 | pièce | Crèmerie | frais
+- Miel | 1 | pot | Épicerie sucrée | sec
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+
+REPAS : Pâtes au thon et à l'algue
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Thon | 1 | boîte | Conserves | conserve
+- Algues nori | 1~ | paquet | Épicerie salée | sec
+- Sauce soja | 1~ | pot | Épicerie salée | sec
+- Mayonnaise | 1~ | pot | Épicerie salée | frais
+
+REPAS : Spaghettis aux épluchures de courgette
+CATÉGORIE : Pâtes et nouilles
+- Spaghettis | 200 | g | Épicerie salée | sec
+- Courgettes | 2 | pièce | Fruits et légumes | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+- Parmesan | 1~ | pot | Crèmerie | frais
+
+REPAS : Pâtes saumon tomates cerises
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Tomates cerises | 1 | paquet | Fruits et légumes | frais
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+
+REPAS : Pâtes oignons confits au four
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Oignon | 2 | pièce | Fruits et légumes | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+- Parmesan | 1~ | pot | Crèmerie | frais
+
+REPAS : Pâtes champignons crème
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Champignons | 1 | boîte | Fruits et légumes | conserve
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Gratin de pâtes
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+- Jambon blanc | 2~ | tranches | Charcuterie traiteur | frais
+
+REPAS : Mac & cheese
+CATÉGORIE : Pâtes et nouilles
+- Pâtes | 200 | g | Épicerie salée | sec
+- Cheddar | 1 | paquet | Crèmerie | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Lait | 300~ | ml | Crèmerie | frais
+- Beurre | 1~ | paquet | Crèmerie | frais
+- Farine | 25~ | g | Épicerie salée | sec
+
+REPAS : Spicy noodle
+CATÉGORIE : Pâtes et nouilles
+- Nouilles chinoises | 2 | paquet | Épicerie salée | sec
+- Œufs | 2~ | pièce | Œufs | frais
+
+REPAS : Nouilles sautées poulet légumes
+CATÉGORIE : Pâtes et nouilles
+- Nouilles chinoises | 200 | g | Épicerie salée | sec
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Carottes | 2~ | pièce | Fruits et légumes | frais
+- Poivron rouge | 1~ | pièce | Fruits et légumes | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Sauce soja | 1~ | pot | Épicerie salée | sec
+
+REPAS : Poulet rôti
+CATÉGORIE : Viandes et volailles
+- Poulet entier | 1 | pièce | Boucherie | frais
+- Pommes de terre | 1000~ | g | Fruits et légumes | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Escalope de poulet sauce crème champignons
+CATÉGORIE : Viandes et volailles
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Champignons | 1 | boîte | Fruits et légumes | conserve
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Poulet curry coco
+CATÉGORIE : Viandes et volailles
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Lait de coco | 2 | boîte | Conserves | conserve
+- Riz | 200 | g | Épicerie salée | sec
+- Curry en poudre | 1~ | pot | Épicerie salée | sec
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Bœuf bourguignon
+CATÉGORIE : Plats complets et traditionnels
+- Carottes | 2 | pièce | Fruits et légumes | frais
+- Oignon | 1 | pièce | Fruits et légumes | frais
+- Bœuf à bourguignon | 500~ | g | Boucherie | frais
+- Lardons | 1~ | paquet | Charcuterie traiteur | frais
+- Vin rouge | 1~ | pièce | Boissons | sec
+
+REPAS : Blanquette de veau
+CATÉGORIE : Plats complets et traditionnels
+- Carottes | 2 | pièce | Fruits et légumes | frais
+- Champignons | 1 | boîte | Fruits et légumes | conserve
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Veau pour blanquette | 400~ | g | Boucherie | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Beurre | 1~ | paquet | Crèmerie | frais
+- Farine | 30~ | g | Épicerie salée | sec
+- Riz | 200~ | g | Épicerie salée | sec
+
+REPAS : Aligot et cuisse de canard confite
+CATÉGORIE : Viandes et volailles
+- Aligot | 1 | paquet | Crèmerie | frais
+- Cuisse de canard confite | 2 | pièce | Conserves | conserve
+
+REPAS : Magret de canard
+CATÉGORIE : Viandes et volailles
+- Magret de canard | 1 | pièce | Boucherie | frais
+- Pommes de terre | 1000~ | g | Fruits et légumes | frais
+
+REPAS : Porc au caramel
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Porc à sauter | 400~ | g | Boucherie | frais
+- Sucre | 60~ | g | Épicerie sucrée | sec
+- Sauce soja | 1~ | pot | Épicerie salée | sec
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Gigot d'agneau
+CATÉGORIE : Viandes et volailles
+- Gigot d'agneau | 1 | pièce | Boucherie | frais
+- Flageolets | 1~ | boîte | Conserves | conserve
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Mafé
+CATÉGORIE : Plats complets et traditionnels
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Pâte d'arachide | 1 | pot | Épicerie sucrée | sec
+- Riz | 200 | g | Épicerie salée | sec
+- Concentré de tomates | 1~ | boîte | Conserves | conserve
+- Carottes | 2~ | pièce | Fruits et légumes | frais
+- Pommes de terre | 1000~ | g | Fruits et légumes | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Lasagne épinards mozzarella
+CATÉGORIE : Plats complets et traditionnels
+- Feuilles de lasagnes | 1 | paquet | Épicerie salée | sec
+- Épinards | 500 | g | Fruits et légumes | surgelé
+- Mozzarella | 1 | pièce | Crèmerie | frais
+- Sauce tomate | 1~ | boîte | Conserves | conserve
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Sushi lasagne
+CATÉGORIE : Plats complets et traditionnels
+- Feuilles de lasagnes | 1 | paquet | Épicerie salée | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Avocat | 1 | pièce | Fruits et légumes | frais
+- Fromage frais | 1 | pot | Crèmerie | frais
+- Riz à sushi | 150~ | g | Épicerie salée | sec
+- Concombre | 1~ | pièce | Fruits et légumes | frais
+- Algues nori | 1~ | paquet | Épicerie salée | sec
+- Sauce soja | 1~ | pot | Épicerie salée | sec
+
+REPAS : Hachis Parmentier
+CATÉGORIE : Plats complets et traditionnels
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Viande hachée | 300 | g | Boucherie | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Beurre | 1~ | paquet | Crèmerie | frais
+- Lait | 100~ | ml | Crèmerie | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Quiche lorraine
+CATÉGORIE : Plats complets et traditionnels
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Lardons | 1 | paquet | Charcuterie traiteur | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Œufs | 3 | pièce | Œufs | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Moussaka
+CATÉGORIE : Plats complets et traditionnels
+- Aubergines | 2 | pièce | Fruits et légumes | frais
+- Viande hachée | 300 | g | Boucherie | frais
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Lait | 250~ | ml | Crèmerie | frais
+- Farine | 25~ | g | Épicerie salée | sec
+- Beurre | 1~ | paquet | Crèmerie | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Couscous
+CATÉGORIE : Plats complets et traditionnels
+- Semoule | 200 | g | Épicerie salée | sec
+- Merguez | 2~ | pièce | Boucherie | frais
+- Blanc de poulet | 2~ | pièce | Boucherie | frais
+- Carottes | 2~ | pièce | Fruits et légumes | frais
+- Courgettes | 2~ | pièce | Fruits et légumes | frais
+- Pois chiches | 1~ | boîte | Conserves | conserve
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Ras el hanout | 1~ | pot | Épicerie salée | sec
+
+REPAS : Saucisse purée
+CATÉGORIE : Viandes et volailles
+- Saucisses | 2 | pièce | Boucherie | frais
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Lait | 100~ | ml | Crèmerie | frais
+- Beurre | 1~ | paquet | Crèmerie | frais
+
+REPAS : Butternut farcie à la viande hachée
+CATÉGORIE : Plats complets et traditionnels
+- Butternut | 1 | pièce | Fruits et légumes | frais
+- Viande hachée | 300 | g | Boucherie | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Gratin dauphinois
+CATÉGORIE : Plats complets et traditionnels
+- Pommes de terre | 1000 | g | Fruits et légumes | frais
+- Crème fraîche | 1 | pot | Crèmerie | frais
+- Lait | 200~ | ml | Crèmerie | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Poêlée de courgettes, pommes de terre et œufs
+CATÉGORIE : Plats complets et traditionnels
+- Courgettes | 2 | pièce | Fruits et légumes | frais
+- Pommes de terre | 500 | g | Fruits et légumes | frais
+- Œufs | 2 | pièce | Œufs | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Riz à la courgette
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Courgettes | 1 | pièce | Fruits et légumes | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Riz sauté aux légumes
+CATÉGORIE : Plats complets et traditionnels
+- Riz | 200 | g | Épicerie salée | sec
+- Carottes | 2~ | pièce | Fruits et légumes | frais
+- Poivron rouge | 1~ | pièce | Fruits et légumes | frais
+- Œufs | 2~ | pièce | Œufs | frais
+- Sauce soja | 1~ | pot | Épicerie salée | sec
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Petits pois | 1~ | paquet | Fruits et légumes | surgelé
+
+REPAS : Poivrons farcis
+CATÉGORIE : Plats complets et traditionnels
+- Poivron rouge | 2 | pièce | Fruits et légumes | frais
+- Viande hachée | 300 | g | Boucherie | frais
+- Riz | 200~ | g | Épicerie salée | sec
+- Sauce tomate | 1~ | boîte | Conserves | conserve
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Panini jambon mozzarella
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain panini | 2 | pièce | Pain et boulangerie | sec
+- Jambon blanc | 2 | tranches | Charcuterie traiteur | frais
+- Mozzarella | 1 | pièce | Crèmerie | frais
+
+REPAS : Panini saumon
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain panini | 2 | pièce | Pain et boulangerie | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Boursin | 1~ | pot | Crèmerie | frais
+- Mozzarella | 1~ | pièce | Crèmerie | frais
+
+REPAS : Sandwich œuf mayo
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Œufs | 2 | pièce | Œufs | frais
+- Mayonnaise | 1 | pot | Épicerie salée | frais
+- Salade | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Sandwich thon
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Thon | 1 | boîte | Conserves | conserve
+- Mayonnaise | 1~ | pot | Épicerie salée | frais
+- Salade | 1~ | pièce | Fruits et légumes | frais
+- Tomates | 3~ | pièce | Fruits et légumes | frais
+
+REPAS : Sandwich merguez frites
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain à sandwich | 2 | pièce | Pain et boulangerie | sec
+- Merguez | 2 | pièce | Boucherie | frais
+- Frites | 1 | paquet | Fruits et légumes | surgelé
+
+REPAS : Wraps au poulet
+CATÉGORIE : Burgers, tacos et sandwichs
+- Wraps | 2 | pièce | Pain et boulangerie | sec
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Salade | 1~ | pièce | Fruits et légumes | frais
+- Tomates | 3~ | pièce | Fruits et légumes | frais
+
+REPAS : Wraps au saumon
+CATÉGORIE : Burgers, tacos et sandwichs
+- Wraps | 2 | pièce | Pain et boulangerie | sec
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Boursin | 1~ | pot | Crèmerie | frais
+- Concombre | 1~ | pièce | Fruits et légumes | frais
+- Salade | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Wraps œufs jambon
+CATÉGORIE : Burgers, tacos et sandwichs
+- Wraps | 2 | pièce | Pain et boulangerie | sec
+- Œufs | 2 | pièce | Œufs | frais
+- Jambon blanc | 2 | tranches | Charcuterie traiteur | frais
+- Salade | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Croque-monsieur
+CATÉGORIE : Burgers, tacos et sandwichs
+- Pain de mie | 4 | tranches | Pain et boulangerie | sec
+- Jambon blanc | 2 | tranches | Charcuterie traiteur | frais
+- Fromage en tranches | 2 | tranches | Crèmerie | frais
+- Beurre | 1~ | paquet | Crèmerie | frais
+
+REPAS : Pizza maison
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte à pizza | 2 | pièce | Crèmerie | frais
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+- Mozzarella | 1~ | pièce | Crèmerie | frais
+- Jambon blanc | 2~ | tranches | Charcuterie traiteur | frais
+
+REPAS : Pizza pepperoni
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte à pizza | 2 | pièce | Crèmerie | frais
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Pepperoni | 1 | paquet | Charcuterie traiteur | frais
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+- Mozzarella | 1~ | pièce | Crèmerie | frais
+
+REPAS : Pizza poulet
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte à pizza | 2 | pièce | Crèmerie | frais
+- Sauce tomate | 1 | boîte | Conserves | conserve
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+- Mozzarella | 1~ | pièce | Crèmerie | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Tarte à la carotte
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Carottes | 3 | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Œufs | 2~ | pièce | Œufs | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Tarte aux poireaux
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Poireaux | 2 | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Œufs | 2 | pièce | Œufs | frais
+- Lardons | 1~ | paquet | Charcuterie traiteur | frais
+
+REPAS : Tarte aux concombres
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Concombre | 1 | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Fromage de chèvre | 1~ | pièce | Crèmerie | frais
+- Œufs | 2~ | pièce | Œufs | frais
+
+REPAS : Tarte aux champignons
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Champignons | 1 | boîte | Fruits et légumes | conserve
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Œufs | 2~ | pièce | Œufs | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Tarte aux tomates
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Tomates | 3 | pièce | Fruits et légumes | frais
+- Fromage râpé | 1 | paquet | Crèmerie | frais
+- Moutarde | 1~ | pot | Épicerie salée | frais
+
+REPAS : Tarte tatin au chou rouge
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte feuilletée | 1 | pièce | Crèmerie | frais
+- Chou rouge | 0.5 | pièce | Fruits et légumes | frais
+- Oignon | 1~ | pièce | Fruits et légumes | frais
+- Fromage de chèvre | 1~ | pièce | Crèmerie | frais
+- Miel | 1~ | pot | Épicerie sucrée | sec
+
+REPAS : Tarte aux épinards
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Épinards | 500 | g | Fruits et légumes | surgelé
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Œufs | 2~ | pièce | Œufs | frais
+
+REPAS : Tarte raclette
+CATÉGORIE : Pizzas, tartes et bricks
+- Pâte brisée | 1 | pièce | Crèmerie | frais
+- Fromage à raclette | 1 | paquet | Crèmerie | frais
+- Charcuterie à raclette | 1 | paquet | Charcuterie traiteur | frais
+- Pommes de terre | 1000~ | g | Fruits et légumes | frais
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+
+REPAS : Bricks aux épinards
+CATÉGORIE : Pizzas, tartes et bricks
+- Feuilles de brick | 1 | paquet | Crèmerie | frais
+- Épinards | 500 | g | Fruits et légumes | surgelé
+- Œufs | 2~ | pièce | Œufs | frais
+- Fromage de chèvre | 1~ | pièce | Crèmerie | frais
+
+REPAS : Bricks au thon
+CATÉGORIE : Pizzas, tartes et bricks
+- Feuilles de brick | 1 | paquet | Crèmerie | frais
+- Thon | 1 | boîte | Conserves | conserve
+- Œufs | 2~ | pièce | Œufs | frais
+- Fromage râpé | 1~ | paquet | Crèmerie | frais
+
+REPAS : Bricks saumon poireaux
+CATÉGORIE : Pizzas, tartes et bricks
+- Feuilles de brick | 1 | paquet | Crèmerie | frais
+- Saumon | 1 | paquet | Poissonnerie | surgelé
+- Poireaux | 2 | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5~ | pot | Crèmerie | frais
+
+REPAS : Bricks au fromage
+CATÉGORIE : Pizzas, tartes et bricks
+- Feuilles de brick | 1 | paquet | Crèmerie | frais
+- Fromage | 1 | paquet | Crèmerie | frais
+
+REPAS : Soupe thaï
+CATÉGORIE : Soupes, salades et entrées
+- Nouilles chinoises | 200 | g | Épicerie salée | sec
+- Blanc de poulet | 2 | pièce | Boucherie | frais
+- Lait de coco | 2~ | boîte | Conserves | conserve
+- Champignons | 1~ | boîte | Fruits et légumes | conserve
+- Citron | 1~ | pièce | Fruits et légumes | frais
+- Pâte de curry rouge | 1~ | pot | Épicerie salée | sec
+- Bouillon de légumes | 1~ | boîte | Épicerie salée | sec
+
+REPAS : Soupe de concombre
+CATÉGORIE : Soupes, salades et entrées
+- Concombre | 2 | pièce | Fruits et légumes | frais
+- Crème fraîche | 0.5 | pot | Crèmerie | frais
+- Yaourt grec | 1~ | pot | Crèmerie | frais
+- Ail | 1~ | pièce | Fruits et légumes | frais
+
+REPAS : Salade de fruits
+CATÉGORIE : Soupes, salades et entrées
+- Fruits variés | 4 | pièce | Fruits et légumes | frais
+
+REPAS : Salade composée au riz
+CATÉGORIE : Soupes, salades et entrées
+- Riz | 200 | g | Épicerie salée | sec
+- Salade | 1 | pièce | Fruits et légumes | frais
+- Tomates | 2 | pièce | Fruits et légumes | frais
+- Concombre | 1 | pièce | Fruits et légumes | frais
+- Maïs | 1 | boîte | Conserves | conserve
+- Thon | 1~ | boîte | Conserves | conserve
+- Œufs | 2~ | pièce | Œufs | frais
+`;
+function applyGpt(){
+  parseMeals(SEED3).forEach(function(gm){
+    var t=mealById(gm.id);
+    if(!t||!t.seed||t.edited) return;
+    t.ings=gm.ings;t.note='';
+  });
+}
+function applyGptOld(){
+  parseMeals(GPT).forEach(function(gm){
+    var t=mealById(gm.id);
+    if(!t||!t.seed||t.edited) return;
+    var generic=gm.ings.some(function(i){return GPT_GENERIC.test(norm(i.n))});
+    var ings=gm.ings.filter(function(i){return !GPT_GENERIC.test(norm(i.n))});
+    var keys={};ings.forEach(function(i){keys[gptKey(i.n)]=1});
+    t.ings.forEach(function(i){ if(!keys[gptKey(i.n)]) ings.push(i) });
+    t.ings=ings;t.note='';
+  });
+}
+
+/* ---------- Outils ---------- */
+function norm(s){return String(s==null?'':s).toLowerCase().replace(/œ/g,'oe').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim()}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fr(n,d){return Number(n).toLocaleString('fr-FR',{maximumFractionDigits:d==null?2:d})}
+function money(n){return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function cap(s){s=String(s).trim();return s.charAt(0).toUpperCase()+s.slice(1)}
+function slug(s){return 'm_'+norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function $(id){return document.getElementById(id)}
+
+function canonName(raw){
+  raw=String(raw).replace(/\(.*?\)/g,'').trim();
+  var n=norm(raw);
+  return ALIAS[n]||cap(raw);
+}
+function normUnit(u){
+  var n=norm(u);
+  if(!n) return '';
+  if(/^(g|gr|gramme|grammes)$/.test(n)) return 'g';
+  if(n==='kg') return 'kg';
+  if(n==='ml'||n==='millilitres'||n==='millilitre') return 'ml';
+  if(n==='cl') return 'cl';
+  if(n==='l'||n==='litre'||n==='litres') return 'l';
+  if(/^pieces?$|^lot$|^unites?$|^unite$/.test(n)) return 'pièce';
+  if(/^paquets?$/.test(n)) return 'paquet';
+  if(n==='pot'||n==='pots') return 'pot';
+  if(/^boites?/.test(n)) return 'boîte';
+  if(/^bocal|^bocaux/.test(n)) return 'pot';
+  if(/^buche|^morceau/.test(n)) return 'pièce';
+  if(/^barquette/.test(n)) return 'paquet';
+  if(/^tranches?$/.test(n)) return 'tranches';
+  if(/^portions?$/.test(n)) return 'portion';
+  if(/^sachets?$/.test(n)) return 'paquet';
+  return '';
+}
+function matchRayon(s){
+  var n=norm(s);
+  if(/surgel/.test(n)) return 'Surgelés';
+  if(/creme|laitier/.test(n)) return 'Crèmerie';
+  if(/oeuf/.test(n)) return 'Œufs';
+  if(/fruit|legume/.test(n)) return 'Fruits et légumes';
+  if(/pain|boulang/.test(n)) return 'Pain et boulangerie';
+  if(/boucher|viande/.test(n)) return 'Boucherie';
+  if(/poisson/.test(n)) return 'Poissonnerie';
+  if(/charcut|traiteur/.test(n)) return 'Charcuterie traiteur';
+  if(/conserv/.test(n)) return 'Conserves';
+  if(/sucr/.test(n)) return 'Épicerie sucrée';
+  if(/epicerie|sale/.test(n)) return 'Épicerie salée';
+  if(/boisson/.test(n)) return 'Boissons';
+  if(/hygi|entretien/.test(n)) return 'Hygiène et entretien';
+  return 'Autre';
+}
+function matchCat(s){
+  var n=norm(s);
+  for(var i=0;i<CATS.length;i++){ if(norm(CATS[i])===n) return CATS[i]; }
+  if(/rapide|sandwich|burger|taco|wrap|kebab/.test(n)) return CATS[3];
+  if(/pizza|tarte|brick/.test(n)) return CATS[4];
+  if(/soupe|salade|entree/.test(n)) return CATS[5];
+  if(/pate|nouille/.test(n)) return CATS[0];
+  if(/viande|volaille|poulet|boeuf|canard|porc/.test(n)) return CATS[1];
+  return CATS[2];
+}
+
+/* ---------- Lecture du format REPAS / INGRÉDIENTS ---------- */
+var RAYG=[[/^pates? (brisee|feuilletee|a pizza)|feuilles de brick/,'Crèmerie'],[/poulet|steak|boeuf|porc|veau|agneau|canard|saucisse|merguez|viande|gigot|magret/,'Boucherie'],
+ [/lardons|jambon|bacon|pepperoni|charcut|chorizo/,'Charcuterie traiteur'],[/fromage|creme|lait|yaourt|beurre|mozzarella|boursin|cheddar|roquefort|parmesan|chevre|aligot|tome/,'Crèmerie'],
+ [/oeuf/,'Œufs'],[/saumon|crevette|fruits de mer|poisson/,'Poissonnerie'],[/^pain|wraps|brioche/,'Pain et boulangerie'],
+ [/miel|sucre|levure|maizena/,'Épicerie sucrée'],[/thon|mais|sauce tomate|flageolets|pois chiches|lait de coco/,'Conserves'],
+ [/^pates?( |$)|nouilles|riz|semoule|farine|sauce|moutarde|mayonnaise|algues|curry|cornichons|chapelure/,'Épicerie salée'],
+ [/pomme|carotte|courgette|concombre|tomate|oignon|ail$|echalote|poivron|salade|chou|celeri|brocoli|epinard|champignon|avocat|aubergine|butternut|potimarron|poireau|citron|fruit|legume/,'Fruits et légumes']];
+function rayonFor(nn){
+  var kn=knownIngs()[nn]; if(kn) return kn.r;
+  for(var i=0;i<RAYG.length;i++){ if(RAYG[i][0].test(nn)) return RAYG[i][1]; }
+  return 'Autre';
+}
+function parseIng(line){
+  var p=line.split('|').map(function(x){return x.trim()});
+  if(p.length<5&&/^(frais|surgel|sec|conserve|\?)/.test(norm(p[3]||''))) p=[p[0],p[1],p[2],'',p[3]];
+  var name=canonName(p[0]); var nn=norm(name);
+  if(!nn||/(^|\b)pst(\b|$)|proteines? de soja/.test(nn)) return null;
+  var std=STD[nn]; var q=NaN, est=false;
+  var m=(p[1]||'').match(/^(\d+(?:[.,]\d+)?)\s*(~)?/);
+  if(m){q=parseFloat(m[1].replace(',','.')); est=!!m[2];}
+  var u=normUnit(p[2]||'');
+  if(isNaN(q)){
+    if(std){q=std[0]; u=std[1];} else {q=1; u='pièce';}
+    est=true;
+  } else {
+    if(u==='kg'){q*=1000;u='g';} else if(u==='l'){q*=1000;u='ml';} else if(u==='cl'){q*=10;u='ml';}
+    if(!u) u=std?std[1]:'pièce';
+  }
+  var pk=(std&&std[2]&&std[1]===u)?std[2]:0;
+  var st=norm(p[4]||'');
+  var r=p[3]?matchRayon(p[3]):rayonFor(nn);
+  var s;
+  if(/surgel/.test(st)) s='surgelé';
+  else if(/conserve/.test(st)) s='conserve';
+  else if(/^sec/.test(st)) s='sec';
+  else if(/frais/.test(st)) s='frais';
+  else if(r==='Surgelés') s='surgelé';
+  else if(r==='Conserves') s='conserve';
+  else if(r==='Épicerie salée'||r==='Épicerie sucrée'||r==='Boissons') s='sec';
+  else s='frais';
+  if(r==='Surgelés') r=FRESHR[nn]||'Autre';
+  if(!p[3]&&s==='conserve') r='Conserves';
+  return {n:name,q:Math.round(q*100)/100,u:u,r:r,s:s,e:est,pk:pk};
+}
+function parseMeals(text){
+  var meals=[],cur=null;
+  String(text).split(/\r?\n/).forEach(function(raw){
+    var l=raw.replace(/\*\*/g,'').replace(/\\/g,'').replace(/&#x20;/g,' ').trim();
+    if(!l) return;
+    var m;
+    if((m=l.match(/^#*\s*REPAS\s*:\s*(.+)$/i))){cur={id:slug(m[1]),name:m[1].trim(),cat:CATS[2],base:2,note:'',ings:[]};meals.push(cur);return;}
+    if(!cur) return;
+    if((m=l.match(/^CAT[ÉE]GORIE\s*:\s*(.+)$/i))){cur.cat=matchCat(m[1]);cur.catSet=true;return;}
+    if((m=l.match(/^PERSONNES\s*:\s*(\d+)/i))){cur.base=Math.max(1,parseInt(m[1],10));return;}
+    if((m=l.match(/^NOTE\s*:\s*(.+)$/i))){cur.note=m[1].trim();return;}
+    if((m=l.match(/^[-*•]\s*(.+\|.+)$/))){var ing=parseIng(m[1]); if(ing) cur.ings.push(ing);}
+  });
+  return meals.filter(function(x){return x.name&&x.ings.length});
+}
+function qtyField(i){return (i.e&&0)?'':String(i.q).replace('.',',')+(i.e?'~':'')}
+function serialize(m){
+  var out=['REPAS : '+m.name,'CATÉGORIE : '+m.cat,'PERSONNES : '+m.base];
+  if(m.note) out.push('NOTE : '+m.note);
+  out.push('INGRÉDIENTS :');
+  m.ings.forEach(function(i){out.push('- '+[i.n,qtyField(i),i.u,i.r,i.s].join(' | '))});
+  return out.join('\n');
+}
+
+/* ---------- État et stockage ---------- */
+var state={meals:[],deleted:[],sel:{},checked:{},stock:{},stateOv:{},prices:{},packOv:{},persons:2,target:28,budget:[190,250],order:RAYONS.slice(),tab:'meals',cat:'Tous',flt:'all',q:'',adj:{},bagCfg:{'echalotes':{min:5,size:0},'ail':{min:5,size:0}}};
+var mem=null;
+function loadSaved(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return mem}}
+function save(){var s=JSON.stringify(state);mem=JSON.parse(s);try{localStorage.setItem(KEY,s)}catch(e){}}
+function mealById(id){for(var i=0;i<state.meals.length;i++){if(state.meals[i].id===id) return state.meals[i]}return null}
+function init(){
+  var saved=loadSaved();
+  if(saved){Object.keys(saved).forEach(function(k){state[k]=saved[k]});}
+  if(!Array.isArray(state.order)||state.order.length<RAYONS.length){RAYONS.forEach(function(r){if(state.order.indexOf(r)<0) state.order.push(r)});}
+  parseMeals(SEED).forEach(function(sm){
+    sm.seed=true;sm.note='';sm.ings.forEach(function(i){i.e=false});
+    var ex=mealById(sm.id);
+    if(!ex){ if(state.deleted.indexOf(sm.id)<0) state.meals.push(sm); }
+    else if(ex.seed&&!ex.edited){ sm.img=ex.img; state.meals[state.meals.indexOf(ex)]=sm; }
+  });
+  parseMeals(buildSeed2()).forEach(function(sm){
+    sm.seed=true;sm.b2=true;
+    var ex=mealById(sm.id);
+    if(!ex){ if(state.deleted.indexOf(sm.id)<0) state.meals.push(sm); }
+    else if(ex.seed&&!ex.edited){ sm.img=ex.img; state.meals[state.meals.indexOf(ex)]=sm; }
+  });
+  RESTOS.forEach(function(r){
+    var id=slug(r[0]);
+    if(!mealById(id)&&state.deleted.indexOf(id)<0) state.meals.push({id:id,name:r[0],cat:r[1],base:2,note:'',ings:[],resto:true,seed:true});
+  });
+  if(!state.validated){state.meals.forEach(function(m){if(m.b2) return;m.note='';m.ings.forEach(function(i){i.e=false})});state.validated=1}
+  if(state.bagV!==2){state.bagCfg={'echalotes':{min:5,size:0},'ail':{min:5,size:0}};state.bagV=2}
+  applyGpt();
+  state.meals.forEach(function(m){if(CATS.indexOf(m.cat)<0) m.cat=matchCat(m.cat)});
+  state.tab='meals';
+  save();
+}
+
+/* ---------- Calcul de la liste ---------- */
+function effState(ing){var o=state.stateOv[norm(ing.n)];return (o&&(ing.s==='frais'||ing.s==='surgelé'))?o:ing.s}
+function mealFactor(id){var s=state.sel[id],m=mealById(id);if(!s||!m) return 0;return ((s.p||state.persons)/(m.base||2))*s.n}
+function buildList(){
+  var lines={};
+  Object.keys(state.sel).forEach(function(id){
+    var m=mealById(id); if(!m) return; var f=mealFactor(id);
+    m.ings.forEach(function(ing,idx){
+      var st=effState(ing);
+      var key=norm(ing.n)+'|'+st+'|'+ing.u;
+      var ln=lines[key]||(lines[key]={key:key,name:ing.n,st:st,u:ing.u,r:ing.r,tot:0,pk:0,est:false,contrib:[],orig:ing.s});
+      ln.tot+=ing.q*f; if(ing.e) ln.est=true;
+      ln.contrib.push({id:id,idx:idx,q:ing.q*f,f:f,meal:m.name});
+      var po=state.packOv[norm(ing.n)+'|'+ing.u];
+      ln.pk=(po!=null)?po:(ln.pk||ing.pk||0);
+    });
+  });
+  var arr=Object.keys(lines).map(function(k){var l=lines[k];finish(l);return l});
+  arr.sort(function(a,b){
+    var ta=tempOf(a),tb=tempOf(b); if(ta!==tb) return ta-tb;
+    var ra=ta===2?0:state.order.indexOf(a.r),rb=tb===2?0:state.order.indexOf(b.r);
+    if(ra!==rb) return ra-rb;
+    return a.name.localeCompare(b.name,'fr');
+  });
+  return arr;
+}
+function tempOf(l){return l.st==='surgelé'?2:(l.st==='frais'?1:0)}
+var WEIGHED=/^(pates|spaghettis|tagliatelles|macaronis|penne|fusilli|nouilles chinoises|nouilles)$/;
+function finish(l){
+  var t=l.tot-1e-6;
+  var bc=state.bagCfg[norm(l.name)];
+  if(l.u==='pièce'&&bc&&bc.min>0&&l.tot>=bc.min-1e-6){l.adj=state.adj[l.key]||0;var nb=Math.max(1,(bc.size>0?Math.ceil(t/bc.size):1)+l.adj);l.text=l.name+' x'+nb+(nb>1?' sachets':' sachet');l.pq=nb;l.pu='le sachet';l.bag=true;}
+  else if(l.u==='g'&&WEIGHED.test(norm(l.name))){l.adj=state.adj[l.key]||0;var pk0=l.pk||500;var np=Math.max(1,Math.ceil(t/pk0)+l.adj);var wg=Math.ceil(l.tot/5-1e-9)*5;l.text=l.name+' '+(wg>=1000?fr(wg/1000,2)+' kg':wg+' g')+' (x'+np+')';l.pq=np;l.pu="le paquet";}
+  else if(l.pk&&(l.u==='g'||l.u==='ml')){l.adj=state.adj[l.key]||0;l.packs=Math.max(1,Math.ceil(t/l.pk)+l.adj);l.text=l.name+' x'+l.packs;l.pq=l.packs;l.pu="l'unité";}
+  else if(COUNT.indexOf(l.u)>=0){l.adj=state.adj[l.key]||0;var c=Math.max(1,Math.ceil(t)+l.adj);l.text=l.name+' x'+c;l.pq=c;l.pu="l'unité";}
+  else if(l.u==='tranches'){l.adj=state.adj[l.key]||0;var c2=Math.max(1,Math.ceil(t)+l.adj);l.text=l.name+' '+c2+' tranches';l.pq=c2;l.pu='la tranche';}
+  else if(l.u==='g'){l.adj=state.adj[l.key]||0;var g=Math.max(5,Math.ceil(l.tot/5-1e-9)*5+l.adj*100);l.text=l.name+' '+(g>=1000?fr(g/1000,2)+' kg':g+' g');l.pq=g/1000;l.pu='le kg';}
+  else if(l.u==='ml'){l.adj=state.adj[l.key]||0;var v=Math.max(5,Math.ceil(l.tot/5-1e-9)*5+l.adj*100);l.text=l.name+' '+(v>=1000?fr(v/1000,2)+' L':v+' ml');l.pq=v/1000;l.pu='le litre';}
+  else {l.adj=state.adj[l.key]||0;var c3=Math.max(1,Math.ceil(t)+l.adj);l.text=l.name+' x'+c3;l.pq=c3;l.pu="l'unité";}
+  var p=state.prices[l.key];
+  l.price=(p!=null&&p!=='')?Number(p):null;
+  l.cost=l.price!=null?l.price*l.pq:null;
+}
+function groups(arr){
+  var res=[];
+  [0,1,2].forEach(function(t){
+    var inT=arr.filter(function(l){return tempOf(l)===t&&!state.stock[l.key]});
+    if(!inT.length) return;
+    var gs=[],map={};
+    inT.forEach(function(l){var r=t===2?'':l.r;if(!map[r]){map[r]={rayon:r,items:[]};gs.push(map[r])}map[r].items.push(l)});
+    res.push({temp:t,title:['Température ambiante','Frais','Surgelés'][t],rayons:gs,count:inT.length});
+  });
+  return res;
+}
+function listText(arr){
+  var out=[];
+  groups(arr).forEach(function(g){
+    g.rayons.forEach(function(r){
+      out.push((g.temp===2?'Surgelés':r.rayon));
+      r.items.forEach(function(l){out.push(l.text)});
+      out.push('');
+    });
+  });
+  return out.join('\n').trim();
+}
+function totalMeals(){var n=0;Object.keys(state.sel).forEach(function(id){if(mealById(id)) n+=state.sel[id].n});return n}
+
+/* ---------- Rendu ---------- */
+function renderTop(){
+  var n=totalMeals(),pct=Math.min(100,Math.round(n/state.target*100));
+  $('top').innerHTML='<div class="row"><h1>Mes courses</h1><div class="stepper" role="group" aria-label="Nombre de personnes"><button data-act="pers" data-d="-1" aria-label="Une personne de moins">−</button><span>'+state.persons+(state.persons>1?' pers.':' pers.')+'</span><button data-act="pers" data-d="1" aria-label="Une personne de plus">+</button></div></div>'+
+  '<div class="prog"><div class="bar"><i style="width:'+pct+'%"></i></div><span>'+n+' / '+state.target+' repas</span></div>';
+}
+function renderNav(){
+  var left=buildList().filter(function(l){return !state.stock[l.key]&&!state.checked[l.key]}).length;
+  var tabs=[['meals','Repas'],['list','Liste'],['set','Réglages']];
+  $('nav').innerHTML=tabs.map(function(t){
+    return '<button data-act="tab" data-t="'+t[0]+'"'+(state.tab===t[0]?' aria-current="page"':'')+'>'+t[1]+(t[0]==='list'&&left?'<span class="badge">'+left+'</span>':'')+'</button>';
+  }).join('');
+}
+function render(){
+  renderTop();renderNav();
+  var m=$('main');
+  if(state.tab==='meals') renderMeals(m);
+  else if(state.tab==='list') renderList(m);
+  else renderSettings(m);
+}
+
+/* Repas */
+function mealsFiltered(){
+  var q=norm(state.q);
+  return state.meals.filter(function(m){
+    if(state.cat!=='Tous'&&m.cat!==state.cat) return false;
+    if(state.flt==='sel'&&!state.sel[m.id]) return false;
+    if(state.flt==='chk'&&!needsCheck(m)) return false;
+    if(!q) return true;
+    return norm(m.name).indexOf(q)>=0||m.ings.some(function(i){return norm(i.n).indexOf(q)>=0});
+  }).sort(function(a,b){return a.name.localeCompare(b.name,'fr')});
+}
+function needsCheck(m){return !!m.note||m.ings.some(function(i){return i.e})}
+function mealCard(m){
+  var s=state.sel[m.id],id=esc(m.id);
+  var ctl=s?'<div class="stepper"><button data-act="dec" data-id="'+id+'" aria-label="Retirer">−</button><span>'+s.n+'</span><button data-act="inc" data-id="'+id+'" aria-label="Ajouter">+</button></div>'
+           :'<button class="add" data-act="inc" data-id="'+id+'" aria-label="Choisir '+esc(m.name)+'">+</button>';
+  var pill=(m.resto&&!m.ings.length)?'<span class="pill p-c">Restaurant</span>':m.note?'<span class="pill p-w">Incomplet</span>':(needsCheck(m)?'<span class="pill p-c">À vérifier</span>':'<span class="pill p-o">Complet ✓</span>');
+  return '<div class="mc'+(s?' sel':'')+'" data-act="open-meal" data-id="'+id+'"><div class="mtx"><div class="tt">'+esc(m.name)+'</div><div class="mrow"><span class="sub">'+((m.resto&&!m.ings.length)?'Rien à acheter':m.ings.length+' ingrédient'+(m.ings.length>1?'s':''))+'</span>'+pill+'</div></div><div class="ctl">'+ctl+'</div></div>';
+}
+function renderMealList(){
+  var arr=mealsFiltered(),box=$('mealList');
+  if(!box) return;
+  if(!arr.length){box.innerHTML='<div class="empty"><h2>Aucun repas trouvé</h2>Change la recherche ou le filtre.</div>';return}
+  box.innerHTML=CATS.map(function(c){
+    var g=arr.filter(function(m){return m.cat===c});
+    return g.length?'<h2 class="sect">'+esc(c)+' ('+g.length+')</h2><div class="grid">'+g.map(mealCard).join('')+'</div>':'';
+  }).join('');
+}
+function renderMeals(m){
+  var counts={Tous:state.meals.length};
+  state.meals.forEach(function(x){counts[x.cat]=(counts[x.cat]||0)+1});
+  var cats=['Tous'].concat(CATS.filter(function(c){return counts[c]}));
+  var nsel=state.meals.filter(function(x){return state.sel[x.id]}).length,nchk=state.meals.filter(needsCheck).length;
+  var flts=[['all','Tous',null],['sel','Sélectionnés',nsel],['chk','À vérifier',nchk]];
+  m.innerHTML='<div class="tools"><input type="search" id="q" placeholder="Rechercher un repas ou un ingrédient" value="'+esc(state.q)+'" aria-label="Rechercher">'+
+   '<div class="chips" role="group" aria-label="Catégories">'+cats.map(function(c){return '<button class="chip" data-act="cat" data-c="'+esc(c)+'" aria-pressed="'+(state.cat===c)+'">'+(c==='Tous'?'Toutes':esc(c))+'<small>('+counts[c]+')</small></button>'}).join('')+'</div>'+
+   '<div class="chips" role="group" aria-label="Filtre">'+flts.map(function(f){return '<button class="chip" data-act="flt" data-f="'+f[0]+'" aria-pressed="'+(state.flt===f[0])+'">'+f[1]+(f[2]!=null?'<small>('+f[2]+')</small>':'')+'</button>'}).join('')+'</div></div>'+
+   '<div id="mealList"></div>'+
+   '<div class="btns" style="margin-top:22px"><button class="btn" data-act="new-meal">Ajouter un repas</button></div>';
+  renderMealList();
+}
+
+/* Liste */
+function renderList(m){
+  var arr=buildList();
+  if(!arr.length){
+    m.innerHTML='<div class="empty"><h2>Ta liste est vide</h2><p>Choisis des repas : les ingrédients arrivent ici, regroupés et triés par rayon.</p><button class="btn primary" data-act="tab" data-t="meals">Choisir des repas</button></div>';
+    return;
+  }
+  var active=arr.filter(function(l){return !state.stock[l.key]});
+  var stocked=arr.filter(function(l){return state.stock[l.key]});
+  var known=0,unk=0;
+  active.forEach(function(l){if(l.cost!=null) known+=l.cost; else unk++});
+  var b=state.budget,top=Math.max(b[1]*1.15,known*1.05,1);
+  var zoneL=(b[0]/top*100).toFixed(1),zoneW=((b[1]-b[0])/top*100).toFixed(1),fill=Math.min(100,known/top*100).toFixed(1);
+  var status=known===0?'Saisis les prix dans le détail de chaque ligne (⋯) pour estimer le total.':
+    (known>b[1]?'Au-dessus de ton budget ('+b[0]+' à '+b[1]+' €).':(known>=b[0]?'Dans ton budget ('+b[0]+' à '+b[1]+' €).':'En dessous de ton budget ('+b[0]+' à '+b[1]+' €).'));
+  var done=active.filter(function(l){return state.checked[l.key]}).length;
+  var html='<section class="sum"><div class="big">'+(known?money(known):'—')+'</div>'+
+   '<div class="sub">'+(unk?(unk+' ligne'+(unk>1?'s':'')+' sans prix : estimation partielle. '):'')+status+'</div>'+
+   '<div class="range" aria-hidden="true"><div class="zone" style="left:'+zoneL+'%;width:'+zoneW+'%"></div><div class="fill'+(known>b[1]?' over':'')+'" style="width:'+fill+'%"></div></div>'+
+   '<div class="sub">'+done+' / '+active.length+' produits dans le caddie</div>'+
+   '<div class="btns" style="margin-top:12px"><button class="btn primary" data-act="copy">Copier la liste</button><button class="btn" data-act="plan">Planning (PNG)</button><button class="btn" data-act="reset" id="resetBtn">Nouvelle liste</button></div></section>';
+  groups(arr).forEach(function(g){
+    html+='<div class="band'+(g.temp===2?' f2':'')+'"><h2>'+g.title+'</h2><span>'+g.count+' produit'+(g.count>1?'s':'')+'</span></div>';
+    g.rayons.forEach(function(r){
+      if(r.rayon) html+='<h3 class="rayon">'+esc(r.rayon)+'</h3>';
+      r.items.forEach(function(l){html+=lineRow(l)});
+    });
+  });
+  if(stocked.length){
+    html+='<details class="stock"><summary>Déjà à la maison ('+stocked.length+')</summary>'+stocked.map(function(l){
+      return '<div class="ln"><div class="lt"><span class="nm">'+esc(l.text)+'</span></div><button class="btn sm" data-act="unstock" data-key="'+esc(l.key)+'">Remettre</button></div>';
+    }).join('')+'</details>';
+  }
+  m.innerHTML=html;
+}
+function adjLabel(l){var w=(l.u==='g'||l.u==='ml')&&!l.pk;var v=Math.abs(l.adj)*(w?100:1);return (l.adj>0?'+':'−')+v+(w?' '+l.u:'')}
+function lineRow(l){
+  var d=!!state.checked[l.key],k=esc(l.key);
+  var chip='';
+  if(l.orig==='frais'||l.orig==='surgelé'){chip='<button class="tmp'+(l.st==='surgelé'?' f':'')+'" data-act="flip" data-key="'+k+'" aria-label="Passer en '+(l.st==='surgelé'?'frais':'surgelé')+'">'+(l.st==='surgelé'?'Surgelé':'Frais')+'</button>';}
+  var meta=(l.cost!=null?'<span class="meta">'+money(l.cost)+'</span>':'');
+  return '<div class="ln'+(d?' done':'')+'"><button class="cb" data-act="chk" data-key="'+k+'" aria-pressed="'+d+'" aria-label="Cocher '+esc(l.name)+'"></button>'+
+   '<div class="lmid"><button class="lt" data-act="chk" data-key="'+k+'"><span class="nm">'+esc(l.text)+(l.adj?'<span class="tag adj">'+adjLabel(l)+'</span>':'')+(l.est?'<span class="tag">à vérifier</span>':'')+'</span></button>'+((chip||meta)?'<div class="lsub">'+chip+meta+'</div>':'')+'</div>'+
+   '<div class="arr"><button data-act="adj" data-d="-1" data-key="'+k+'" aria-label="Un de moins pour '+esc(l.name)+'">‹</button><button data-act="adj" data-d="1" data-key="'+k+'" aria-label="Un de plus pour '+esc(l.name)+'">›</button></div>'+
+   '<button class="more" data-act="open-line" data-key="'+k+'" aria-label="Détails de '+esc(l.name)+'">⋯</button></div>';
+}
+
+/* Réglages */
+function renderSettings(m){
+  m.innerHTML=
+  '<section class="card"><h2>Mes habitudes</h2><div class="two"><label class="fld">Repas par session<input type="number" id="s_target" min="1" max="99" value="'+state.target+'"></label><label class="fld">Personnes (par défaut)<input type="number" id="s_pers" min="1" max="20" value="'+state.persons+'"></label></div>'+
+  '<div class="two"><label class="fld">Budget minimum (€)<input type="number" id="s_b0" min="0" value="'+state.budget[0]+'"></label><label class="fld">Budget maximum (€)<input type="number" id="s_b1" min="0" value="'+state.budget[1]+'"></label></div></section>'+
+  '<section class="card"><h2>Ordre des rayons</h2><p>Classe les rayons comme ton parcours au Leclerc de Riantec. La liste suit cet ordre.</p>'+
+  state.order.map(function(r,i){return '<div class="ord"><span>'+esc(r)+'</span><span class="btns"><button class="btn sm" data-act="rup" data-i="'+i+'" aria-label="Monter '+esc(r)+'"'+(i===0?' disabled':'')+'>▲</button><button class="btn sm" data-act="rdn" data-i="'+i+'" aria-label="Descendre '+esc(r)+'"'+(i===state.order.length-1?' disabled':'')+'>▼</button></span></div>'}).join('')+
+  '<button class="btn sm" data-act="rreset">Remettre l\'ordre d\'origine</button></section>'+
+  '<section class="card"><h2>Importer des repas</h2><p>Colle ici la réponse de ChatGPT (format REPAS / CATÉGORIE / INGRÉDIENTS). Les repas existants sont mis à jour, sauf ceux que tu as modifiés ici.</p><textarea id="imp" placeholder="REPAS : …"></textarea><div class="btns"><button class="btn primary" data-act="import">Importer</button></div></section>'+
+  '<section class="card"><h2>Sauvegarde</h2><p>Tout est enregistré sur cet appareil. Copie la sauvegarde pour la garder ou la passer d\'un appareil à l\'autre.</p><div class="btns"><button class="btn" data-act="backup">Copier la sauvegarde</button><button class="btn" data-act="restore-open">Restaurer</button></div></section>'+
+  (state.deleted.length?'<section class="card"><h2>Repas supprimés</h2><p>'+state.deleted.length+' repas supprimé'+(state.deleted.length>1?'s':'')+'. Tu peux les remettre dans l\'appli.</p><div class="btns"><button class="btn" data-act="undelete">Restaurer les repas supprimés</button></div></section>':'')+
+  '<section class="card"><h2>Tout effacer</h2><p>Supprime tes repas modifiés, tes prix et tes réglages sur cet appareil.</p><div class="btns"><button class="btn danger" data-act="wipe" id="wipeBtn">Réinitialiser l\'appli</button></div></section>';
+}
+
+/* Feuilles */
+function openSheet(html,keep){var st=$('sheet').scrollTop;$('sheetIn').innerHTML=html;$('back').classList.add('on');$('sheet').classList.add('on');$('sheet').scrollTop=keep?st:0}
+function closeSheet(){$('back').classList.remove('on');$('sheet').classList.remove('on');sheetCtx=null}
+var sheetCtx=null;
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove('on')},2400)}
+
+function fmtQ(q,u){
+  var v=Math.round(q*100)/100;
+  if(u==='g') return v>=1000?fr(v/1000,2)+' kg':fr(v,0)+' g';
+  if(u==='ml') return v>=1000?fr(v/1000,2)+' L':fr(v,0)+' ml';
+  if(u==='tranches') return fr(v)+' tranches';
+  return fr(v)+' '+u+(v>1&&u!=='pièce'?'':'')+(u==='pièce'&&v>1?'s':(v>1&&(u==='pot'||u==='paquet'||u==='boîte'||u==='portion')?'s':''));
+}
+function knownIngs(){
+  var map={};
+  state.meals.forEach(function(m){m.ings.forEach(function(i){var k=norm(i.n);if(!map[k]) map[k]=i})});
+  return map;
+}
+function openMeal(id,keep){
+  var m=mealById(id); if(!m) return; sheetCtx={type:'meal',id:id};
+  var s=state.sel[id],p=(s&&s.p)||state.persons,f=p/(m.base||2),eid=esc(id);
+  var rows=m.ings.map(function(i,ix){
+    return '<div class="irow" style="align-items:center"><span style="min-width:0;overflow-wrap:anywhere">'+esc(i.n)+(i.s==='surgelé'?' <small>(surgelé)</small>':'')+(i.e?' <span class="tag">à vérifier</span>':'')+'</span>'+
+     '<span class="cin"><input type="number" step="any" min="0" inputmode="decimal" data-iq="'+ix+'" value="'+(Math.round(i.q*f*100)/100)+'" aria-label="Quantité de '+esc(i.n)+'"><span>'+esc(i.u)+'</span>'+
+     '<button class="btn sm" data-act="ing-del" data-id="'+eid+'" data-i="'+ix+'" aria-label="Retirer '+esc(i.n)+'">✕</button></span></div>';
+  }).join('');
+  var kn=knownIngs(),names=Object.keys(kn).map(function(k){return kn[k].n}).sort(function(a,b){return a.localeCompare(b,'fr')});
+  var opt=function(arr,sel){return arr.map(function(x){return '<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
+  openSheet('<h2>'+esc(m.name)+'</h2><div class="sub" style="color:var(--muted)">'+esc(m.cat)+' · quantités pour '+p+' personne'+(p>1?'s':'')+' (pour tout le repas, pas par personne)</div>'+
+   (m.note?'<div class="note">'+esc(m.note)+'</div>':'')+
+   '<div>'+(rows||'<div class="irow"><span style="color:var(--muted)">'+(m.resto?'Repas au restaurant : rien à acheter. Tu peux quand même ajouter des ingrédients ci-dessous.':'Aucun ingrédient pour l\'instant.')+'</span></div>')+'</div>'+
+   '<div class="addbox"><b style="font-size:13.5px">Ajouter un ingrédient</b>'+
+   '<input type="text" id="a_name" list="ingnames" placeholder="Nom (ex. Crème fraîche)" autocomplete="off"><datalist id="ingnames">'+names.map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist>'+
+   '<div class="two"><input type="number" id="a_q" step="any" min="0" inputmode="decimal" placeholder="Quantité"><select id="a_u" aria-label="Unité">'+opt(['g','ml','pièce','paquet','pot','boîte','tranches','portion'],'pièce')+'</select></div>'+
+   '<div class="two"><select id="a_r" aria-label="Rayon">'+opt(RAYONS,'Fruits et légumes')+'</select><select id="a_s" aria-label="Type">'+opt(['frais','surgelé','sec','conserve'],'frais')+'</select></div>'+
+   '<button class="btn primary" data-act="ing-add" data-id="'+eid+'">Ajouter</button></div>'+
+   (s?'<div class="irow" style="align-items:center"><span>Personnes pour ce repas</span><div class="stepper"><button data-act="mpers" data-d="-1" data-id="'+eid+'">−</button><span>'+p+'</span><button data-act="mpers" data-d="1" data-id="'+eid+'">+</button></div></div>':'')+
+   '<div class="btns"><button class="btn primary" data-act="'+(s?'rm':'inc')+'-sheet" data-id="'+eid+'">'+(s?'Retirer de ma sélection':'Ajouter à ma sélection')+'</button>'+((m.ings.length||!m.resto)?'<button class="btn" data-act="edit-meal" data-id="'+eid+'">Modifier le texte</button>':'')+'<button class="btn danger" data-act="del-sheet" data-id="'+eid+'">Supprimer le repas</button><button class="btn" data-act="close">Fermer</button></div>',keep);
+}
+function openEditor(id){
+  var m=id?mealById(id):null;
+  sheetCtx={type:'edit',id:id||null};
+  var txt=m?serialize(m):'REPAS : \nCATÉGORIE : '+CATS[2]+'\nPERSONNES : 2\nNOTE : \nINGRÉDIENTS :\n- Ingrédient | 1 | pièce | Fruits et légumes | frais';
+  openSheet('<h2>'+(m?'Modifier le repas':'Nouveau repas')+'</h2><p style="margin:0;color:var(--muted);font-size:13.5px">Une ligne par ingrédient : nom | quantité | unité | rayon | frais, surgelé, sec ou conserve. Un « ~ » après la quantité signale une valeur à vérifier : enlève-le quand tu l\'as confirmée. Catégories : '+CATS.join(', ')+'.</p>'+
+   '<textarea id="edtxt" spellcheck="false">'+esc(txt)+'</textarea>'+
+   '<div class="btns"><button class="btn primary" data-act="save-meal">Enregistrer</button>'+(m?'<button class="btn danger" data-act="del-meal" id="delBtn" data-id="'+esc(id)+'">Supprimer</button>':'')+'<button class="btn" data-act="close">Annuler</button></div>');
+}
+function openLine(key){
+  var l=buildList().filter(function(x){return x.key===key})[0]; if(!l) return; sheetCtx={type:'line',key:key};var bc0=state.bagCfg[key.split('|')[0]]||{};
+  var contrib=l.contrib.map(function(c,i){
+    var disp=Math.round(c.q*100)/100;
+    return '<div class="irow" style="align-items:center"><span>'+esc(c.meal)+'</span><span class="cin"><input type="number" step="any" min="0" inputmode="decimal" data-ci="'+i+'" value="'+disp+'" aria-label="Quantité pour '+esc(c.meal)+'"><span>'+esc(l.u)+'</span></span></div>';
+  }).join('');
+  var canFlip=l.orig==='frais'||l.orig==='surgelé';
+  openSheet('<h2>'+esc(l.name)+'</h2><div class="sub" style="color:var(--muted)">À acheter : '+esc(l.text)+'</div>'+
+   (l.est?'<div class="note">Quantité standard, pas encore confirmée. Corrige-la ci-dessous : elle sera retenue pour les prochaines listes.</div>':'')+
+   (l.adj?'<div class="irow" style="align-items:center"><span>Ajustement manuel : '+adjLabel(l)+'</span><button class="btn sm" data-act="adj-reset" data-key="'+esc(key)+'">Réinitialiser</button></div>':'')+'<div><b style="font-size:13.5px">Quantité par repas</b>'+contrib+'</div>'+
+   '<div class="two"><label class="fld">Prix ('+(l.pu)+')<input type="number" step="0.01" min="0" inputmode="decimal" id="l_price" value="'+(l.price!=null?l.price:'')+'" placeholder="0,00 €"></label>'+
+   ((l.u==='g'||l.u==='ml')?'<label class="fld">Taille du paquet ('+l.u+')<input type="number" min="0" inputmode="numeric" id="l_pack" value="'+(l.pk||'')+'" placeholder="aucune"></label>':'<div></div>')+'</div>'+
+   (l.u==='pièce'?'<div class="two"><label class="fld">Sachet à partir de (pièces)<input type="number" min="0" inputmode="numeric" id="l_bagmin" value="'+(bc0.min||'')+'" placeholder="jamais"></label><label class="fld">Pièces par sachet<input type="number" min="1" inputmode="numeric" id="l_bagsize" value="'+(bc0.size||'')+'" placeholder="toujours 1"></label></div>':'')+'<div class="btns">'+(canFlip?'<button class="btn" data-act="flip" data-key="'+esc(key)+'" data-keep="1">Passer en '+(l.st==='surgelé'?'frais':'surgelé')+'</button>':'')+
+   '<button class="btn" data-act="stock" data-key="'+esc(key)+'">Déjà à la maison</button><button class="btn primary" data-act="close">OK</button></div>');
+}
+
+/* ---------- Actions ---------- */
+function setSel(id,delta){
+  var s=state.sel[id];
+  if(!s){ if(delta>0) state.sel[id]={n:1,p:0}; }
+  else { s.n+=delta; if(s.n<=0) delete state.sel[id]; }
+}
+function backup(){return JSON.stringify(state)}
+var confirmT={};
+function twoStep(btn,id,label,fn){
+  if(confirmT[id]){clearTimeout(confirmT[id]);confirmT[id]=0;fn();return}
+  var old=btn.textContent;btn.textContent=label;
+  confirmT[id]=setTimeout(function(){confirmT[id]=0;btn.textContent=old},3500);
+}
+
+/* ---------- Planning PNG ---------- */
+var DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+function planSlots(){
+  var exp=[];Object.keys(state.sel).forEach(function(id){var m=mealById(id);if(!m) return;for(var i=0;i<state.sel[id].n;i++) exp.push(id)});
+  var cur=Array.isArray(state.plan)?state.plan.slice():[];
+  var a=exp.slice().sort().join('|'),b=cur.slice().sort().join('|');
+  if(a!==b) state.plan=exp; return state.plan;
+}
+function openPlan(keep){
+  var pl=planSlots(); save(); sheetCtx={type:'plan'};
+  var h='<h2>Planning</h2><p style="margin:0 0 8px;color:var(--muted);font-size:13.5px">Ordre : midi puis soir, du lundi au dimanche. Déplace les repas avec les flèches.</p>';
+  pl.forEach(function(id,i){
+    var w=Math.floor(i/14)+1,d=Math.floor((i%14)/2),sl=i%2?'soir':'midi',m=mealById(id);
+    h+=(i%14===0?'<h3 class="rayon">Semaine '+w+'</h3>':'')+'<div class="ord"><span>'+DAYS[d].slice(0,3)+' '+sl+' · '+esc(m?m.name:'?')+'</span><span class="btns"><button class="btn sm" data-act="pl-up" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Monter">▲</button><button class="btn sm" data-act="pl-dn" data-i="'+i+'"'+(i===pl.length-1?' disabled':'')+' aria-label="Descendre">▼</button></span></div>';
+  });
+  h+='<div class="btns" style="margin-top:14px"><button class="btn primary" data-act="pl-png">Créer les PNG</button><button class="btn" data-act="close">Fermer</button></div><div id="plImgs"></div>';
+  openSheet(h,keep);
+}
+function wrapText(ctx,txt,w){
+  var words=String(txt).split(' '),lines=[],cur='';
+  words.forEach(function(wd){var t=cur?cur+' '+wd:wd;if(ctx.measureText(t).width>w&&cur){lines.push(cur);cur=wd}else cur=t});
+  if(cur) lines.push(cur);return lines;
+}
+function drawWeek(slots){
+  var W=2000,H=1414,c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);x.strokeStyle='#000';x.lineWidth=2;x.fillStyle='#000';x.textAlign='center';x.textBaseline='middle';
+  var X1=248,X2=1046,HH=92,RH=(H-HH)/7,F='"Open Sans","Helvetica Neue",Arial,sans-serif';
+  function ln(a,b,c2,d){x.beginPath();x.moveTo(a,b);x.lineTo(c2,d);x.stroke()}
+  ln(X1,0,X1,H);ln(0,HH,W,HH);ln(X2,HH,X2,H);
+  x.font='bold 46px '+F;x.fillText('Midi',(X1+X2)/2+100,HH/2+4);x.fillText('Soir',(X2+W)/2,HH/2+4);
+  for(var d=0;d<7;d++){
+    var y=HH+d*RH;if(d>0) ln(0,y,W,y);
+    x.font='bold 44px '+F;x.fillText(DAYS[d],X1/2,y+RH/2);
+    [slots[d*2],slots[d*2+1]].forEach(function(id,k){
+      var m=id&&mealById(id);if(!m) return;
+      x.font='bold 42px '+F;var cx=k?(X2+W)/2:(X1+X2)/2,lines=wrapText(x,m.name,(k?W-X2:X2-X1)-110);
+      lines.forEach(function(t,j){x.fillText(t,cx,y+RH/2+(j-(lines.length-1)/2)*58)});
+    });
+  }
+  return c;
+}
+function makePng(){
+  var pl=planSlots(),box=$('plImgs');box.innerHTML='';
+  var weeks=Math.ceil(pl.length/14);
+  function go(){
+    for(var w=0;w<weeks;w++){
+      (function(w){
+        var cv=drawWeek(pl.slice(w*14,w*14+14)),url=cv.toDataURL('image/png');
+        var wrap=document.createElement('div');wrap.style.marginTop='16px';
+        wrap.innerHTML='<img src="'+url+'" alt="Planning semaine '+(w+1)+'" style="width:100%;border-radius:8px;background:#fff"><div class="btns" style="margin-top:8px"><a class="btn" download="planning-semaine-'+(w+1)+'.png" href="'+url+'">Télécharger semaine '+(w+1)+'</a><button class="btn" data-act="pl-share" data-w="'+w+'">Partager</button></div>';
+        box.appendChild(wrap);wrap._cv=cv;wrap.querySelector('[data-act=pl-share]').onclick=function(){
+          cv.toBlob(function(b){var f=new File([b],'planning-semaine-'+(w+1)+'.png',{type:'image/png'});
+            if(navigator.canShare&&navigator.canShare({files:[f]})) navigator.share({files:[f]}).catch(function(){});
+            else toast('Appui long sur l’image pour l’enregistrer')});
+        };
+      })(w);
+    }
+  }
+  if(document.fonts&&document.fonts.load){document.fonts.load('bold 42px "Open Sans"').then(go,go)}else go();
+}
+function copyText(text){
+  function fallback(){
+    openSheet('<h2>Copier la liste</h2><p style="margin:0;color:var(--muted);font-size:13.5px">Sélectionne tout le texte puis copie-le dans Notes.</p><textarea id="cptxt" readonly>'+esc(text)+'</textarea><div class="btns"><button class="btn primary" data-act="close">Fermer</button></div>');
+    var t=$('cptxt');if(t){t.focus();t.select()}
+  }
+  try{ navigator.clipboard.writeText(text).then(function(){toast('Liste copiée')},fallback); }catch(e){fallback()}
+}
+
+document.addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-act]'); if(!t){ if(ev.target.id==='back') closeSheet(); return; }
+  var a=t.dataset.act,id=t.dataset.id,key=t.dataset.key;
+  if(a==='tab'){state.tab=t.dataset.t;render();window.scrollTo(0,0);return}
+  if(a==='pers'){state.persons=Math.max(1,Math.min(20,state.persons+Number(t.dataset.d)));save();render();return}
+  if(a==='flt'){state.flt=t.dataset.f;save();render();return}
+  if(a==='cat'){state.cat=t.dataset.c;save();render();return}
+  if(a==='plan'){openPlan();return}
+  if(a==='pl-up'||a==='pl-dn'){var i=Number(t.dataset.i),j=a==='pl-up'?i-1:i+1,pl=state.plan;if(pl[j]==null) return;var tmp=pl[i];pl[i]=pl[j];pl[j]=tmp;save();openPlan(true);return}
+  if(a==='pl-png'){makePng();return}
+  if(a==='inc'){setSel(id,1);save();render();return}
+  if(a==='dec'){setSel(id,-1);save();render();return}
+  if(a==='open-meal'){openMeal(id);return}
+  if(a==='inc-sheet'){setSel(id,1);save();render();openMeal(id);return}
+  if(a==='rm-sheet'){delete state.sel[id];save();render();closeSheet();return}
+  if(a==='mpers'){var s=state.sel[id];if(s){var p=(s.p||state.persons)+Number(t.dataset.d);s.p=Math.max(1,Math.min(20,p));save();render();openMeal(id)}return}
+  if(a==='ing-del'){
+    var dm=mealById(id);if(dm){dm.ings.splice(Number(t.dataset.i),1);dm.edited=true;save();render();openMeal(id,true)}return;
+  }
+  if(a==='ing-add'){
+    var am=mealById(id),nm0=($('a_name').value||'').trim();
+    if(!am||!nm0){toast('Écris le nom de l\'ingrédient.');return}
+    var qv=$('a_q').value.replace(',','.'),ing=parseIng([nm0,qv,$('a_u').value,$('a_r').value,$('a_s').value].join(' | '));
+    if(!ing){toast('Cet ingrédient est déjà à la maison (PST).');return}
+    if(qv!==''&&!isNaN(parseFloat(qv))){var st0=state.sel[id],pp=(st0&&st0.p)||state.persons;ing.q=Math.round(parseFloat(qv)/(pp/(am.base||2))*100)/100;ing.e=false}
+    am.ings.push(ing);am.edited=true;save();render();openMeal(id,true);toast(ing.n+' ajouté');return;
+  }
+  if(a==='close'){closeSheet();return}
+  if(a==='new-meal'){openEditor(null);return}
+  if(a==='edit-meal'){openEditor(id);return}
+  if(a==='save-meal'){
+    var parsed=parseMeals($('edtxt').value);
+    if(!parsed.length){toast('Il faut un nom et au moins un ingrédient valide.');return}
+    var nm=parsed[0],old=sheetCtx&&sheetCtx.id?mealById(sheetCtx.id):null;
+    if(old){nm.id=old.id;nm.seed=old.seed;nm.img=old.img;state.meals[state.meals.indexOf(old)]=nm;}
+    else {var base=nm.id,n=2;while(mealById(nm.id)){nm.id=base+'-'+n++}state.meals.push(nm)}
+    nm.edited=true;save();closeSheet();render();toast('Repas enregistré');return;
+  }
+  if(a==='del-sheet'){twoStep(t,'delm','Confirmer la suppression',function(){
+    state.meals=state.meals.filter(function(m){return m.id!==id});delete state.sel[id];
+    if(state.deleted.indexOf(id)<0) state.deleted.push(id);
+    save();closeSheet();render();toast('Repas supprimé');});return}
+  if(a==='undelete'){state.deleted=[];save();location.reload();return}
+  if(a==='del-meal'){twoStep(t,'del','Confirmer la suppression',function(){
+    state.meals=state.meals.filter(function(m){return m.id!==id});delete state.sel[id];
+    if(state.deleted.indexOf(id)<0) state.deleted.push(id);
+    save();closeSheet();render();toast('Repas supprimé');});return}
+  if(a==='chk'){if(state.checked[key]) delete state.checked[key]; else state.checked[key]=1;save();render();return}
+  if(a==='flip'){
+    var l=buildList().filter(function(x){return x.key===key})[0]; if(!l) return;
+    var nn=key.split('|')[0];state.stateOv[nn]=l.st==='surgelé'?'frais':'surgelé';
+    delete state.checked[key];save();render();
+    if(t.dataset.keep) closeSheet();
+    return;
+  }
+  if(a==='open-line'){openLine(key);return}
+  if(a==='stock'){state.stock[key]=1;save();closeSheet();render();toast('Retiré de la liste');return}
+  if(a==='adj'){
+    var d0=Number(t.dataset.d),cur=state.adj[key]||0,b4=buildList().filter(function(x){return x.key===key})[0];
+    state.adj[key]=cur+d0;
+    var af=buildList().filter(function(x){return x.key===key})[0];
+    if(b4&&af&&b4.text===af.text) state.adj[key]=cur;
+    if(!state.adj[key]) delete state.adj[key];
+    save();render();return;
+  }
+  if(a==='adj-reset'){delete state.adj[key];save();render();openLine(key);return}
+  if(a==='unstock'){delete state.stock[key];save();render();return}
+  if(a==='copy'){copyText(listText(buildList()));return}
+  if(a==='reset'){twoStep(t,'reset','Tout effacer ? Appuie encore',function(){state.sel={};state.checked={};state.stock={};state.adj={};save();render();toast('Nouvelle liste prête')});return}
+  if(a==='rup'||a==='rdn'){var i=Number(t.dataset.i),j=a==='rup'?i-1:i+1;if(j>=0&&j<state.order.length){var x=state.order[i];state.order[i]=state.order[j];state.order[j]=x;save();render()}return}
+  if(a==='rreset'){state.order=RAYONS.slice();save();render();return}
+  if(a==='import'){
+    var ms=parseMeals($('imp').value),add=0,upd=0,skip=0;
+    if(!ms.length){toast('Aucun repas reconnu. Vérifie le format.');return}
+    ms.forEach(function(nm){
+      var ex=mealById(nm.id)||state.meals.filter(function(m){return norm(m.name)===norm(nm.name)})[0];
+      if(ex){ if(ex.edited){skip++;return} if(!nm.catSet) nm.cat=ex.cat; nm.id=ex.id;nm.seed=ex.seed;nm.img=ex.img;state.meals[state.meals.indexOf(ex)]=nm;upd++; }
+      else {if(!nm.catSet) nm.cat=matchCat(nm.name);state.meals.push(nm);add++}
+      var di=state.deleted.indexOf(nm.id);if(di>=0) state.deleted.splice(di,1);
+    });
+    save();render();toast(add+' ajouté'+(add>1?'s':'')+', '+upd+' mis à jour'+(skip?', '+skip+' ignoré'+(skip>1?'s':'')+' (modifié'+(skip>1?'s':'')+' ici)':''));return;
+  }
+  if(a==='backup'){copyText(backup());return}
+  if(a==='restore-open'){
+    sheetCtx={type:'restore'};
+    openSheet('<h2>Restaurer une sauvegarde</h2><textarea id="rtxt" placeholder="Colle ici la sauvegarde"></textarea><div class="btns"><button class="btn primary" data-act="restore">Restaurer</button><button class="btn" data-act="close">Annuler</button></div>');return;
+  }
+  if(a==='restore'){
+    try{var o=JSON.parse($('rtxt').value);if(!o||!Array.isArray(o.meals)) throw 0;Object.keys(o).forEach(function(k){state[k]=o[k]});save();closeSheet();render();toast('Sauvegarde restaurée')}
+    catch(e){toast('Sauvegarde illisible.')}
+    return;
+  }
+  if(a==='wipe'){twoStep(t,'wipe','Confirmer : tout effacer',function(){try{localStorage.removeItem(KEY)}catch(e){}location.reload()});return}
+});
+
+document.addEventListener('input',function(ev){
+  var t=ev.target;
+  if(t.id==='q'){state.q=t.value;renderMealList();return}
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t.id==='a_name'&&sheetCtx&&sheetCtx.type==='meal'){
+    var kn=knownIngs()[norm(t.value)];
+    if(kn){$('a_u').value=kn.u;$('a_r').value=kn.r;$('a_s').value=kn.s}
+    return;
+  }
+  if(t.dataset&&t.dataset.iq!=null&&sheetCtx&&sheetCtx.type==='meal'){
+    var mm=mealById(sheetCtx.id),v0=parseFloat(String(t.value).replace(',','.'));
+    if(!mm||isNaN(v0)||v0<0) return;
+    var s1=state.sel[mm.id],p1=(s1&&s1.p)||state.persons;
+    var ig=mm.ings[Number(t.dataset.iq)];if(!ig) return;
+    ig.q=Math.round(v0/(p1/(mm.base||2))*100)/100;ig.e=false;mm.edited=true;save();render();openMeal(mm.id,true);return;
+  }
+  if(t.id==='s_target'){state.target=Math.max(1,parseInt(t.value,10)||28);save();renderTop();return}
+  if(t.id==='s_pers'){state.persons=Math.max(1,Math.min(20,parseInt(t.value,10)||2));save();renderTop();return}
+  if(t.id==='s_b0'||t.id==='s_b1'){var a=parseFloat($('s_b0').value)||0,b=parseFloat($('s_b1').value)||0;state.budget=[Math.min(a,b),Math.max(a,b)];save();return}
+  if(sheetCtx&&sheetCtx.type==='line'){
+    var key=sheetCtx.key;
+    if(t.id==='l_bagmin'||t.id==='l_bagsize'){
+      var bn=key.split('|')[0],bmin=parseInt($('l_bagmin').value,10)||0,bsz=parseInt($('l_bagsize').value,10)||0;
+      if(bmin>0) state.bagCfg[bn]={min:bmin,size:bsz}; else delete state.bagCfg[bn];
+      save();render();openLine(key);return;
+    }
+    if(t.id==='l_price'){var v=t.value.replace(',','.');if(v===''||isNaN(parseFloat(v))) delete state.prices[key]; else state.prices[key]=parseFloat(v);save();render();openLine(key);return}
+    if(t.id==='l_pack'){
+      var l=buildList().filter(function(x){return x.key===key})[0];if(!l) return;
+      var pv=parseInt(t.value,10)||0;state.packOv[norm(l.name)+'|'+l.u]=pv;save();render();openLine(key);return;
+    }
+    if(t.dataset.ci!=null){
+      var ln=buildList().filter(function(x){return x.key===key})[0];if(!ln) return;
+      var c=ln.contrib[Number(t.dataset.ci)],val=parseFloat(String(t.value).replace(',','.'));
+      if(!c||isNaN(val)||val<0||!c.f) return;
+      var m=mealById(c.id);if(!m) return;
+      m.ings[c.idx].q=Math.round(val/c.f*100)/100;m.ings[c.idx].e=false;m.edited=true;
+      save();render();openLine(key);toast('Quantité enregistrée pour ce repas');
+    }
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape') closeSheet()});
+
+window.__app={GPT:GPT,state:state,buildList:buildList,parseMeals:parseMeals,listText:listText,serialize:serialize};
+init();render();
+})();
+</script>
+
+</html>
