@@ -1683,7 +1683,61 @@ function serialize(m){
 var state={meals:[],deleted:[],sel:{},checked:{},stock:{},stateOv:{},prices:{},packOv:{},persons:2,target:28,budget:[190,250],order:RAYONS.slice(),tab:'meals',cat:'Tous',flt:'all',q:'',adj:{},bagCfg:{'echalotes':{min:5,size:0},'ail':{min:5,size:0}}};
 var mem=null;
 function loadSaved(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return mem}}
-function save(){var s=JSON.stringify(state);mem=JSON.parse(s);try{localStorage.setItem(KEY,s)}catch(e){}}
+function save(){var s=JSON.stringify(state);mem=JSON.parse(s);try{localStorage.setItem(KEY,s)}catch(e){}syncDirty()}
+
+/* ---------- Synchronisation (Firestore REST) ---------- */
+var FB={apiKey:'AIzaSyChZ61pgqlwjuy5Ajln5N0kBGBDco0hVYk',projectId:'courses-b1a08'};
+var SK='courses.sync.v1',sy={code:'',base:0,lm:0,msg:'',busy:false,applying:false,timer:null};
+try{var sv=JSON.parse(localStorage.getItem(SK)||'null');if(sv){sy.code=sv.code||'';sy.base=sv.base||0;sy.lm=sv.lm||0}}catch(e){}
+function syncSave(){try{localStorage.setItem(SK,JSON.stringify({code:sy.code,base:sy.base,lm:sy.lm}))}catch(e){}}
+function syUrl(){return 'https://firestore.googleapis.com/v1/projects/'+FB.projectId+'/databases/(default)/documents/sync/'+encodeURIComponent(sy.code)}
+var NOSYNC={tab:1,cat:1,flt:1,q:1};
+function syncPayload(){
+  var o={};Object.keys(state).forEach(function(k){if(!NOSYNC[k]) o[k]=state[k]});
+  o.meals=state.meals.filter(function(m){return !m.seed||m.edited});
+  return JSON.stringify(o);
+}
+function syncDirty(){
+  if(!sy.code||sy.applying) return;
+  sy.lm=Date.now();syncSave();
+  clearTimeout(sy.timer);sy.timer=setTimeout(syncPush,1500);
+}
+function syncPush(){
+  if(!sy.code) return Promise.resolve();
+  var ts=Date.now();
+  return fetch(syUrl()+'?key='+FB.apiKey+'&updateMask.fieldPaths=data&updateMask.fieldPaths=ts',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{data:{stringValue:syncPayload()},ts:{integerValue:String(ts)}}})})
+  .then(function(r){if(!r.ok) throw new Error('HTTP '+r.status);sy.base=ts;sy.lm=ts;syncSave();setMsg('Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}))})
+  .catch(function(e){setMsg('Échec de l’envoi ('+e.message+')')});
+}
+function setMsg(m){sy.msg=m;var e=$('syMsg');if(e) e.textContent=m}
+function applyRemote(data){
+  var o=JSON.parse(data);sy.applying=true;
+  try{
+    var rm=o.meals||[];delete o.meals;
+    Object.keys(o).forEach(function(k){state[k]=o[k]});
+    var ids={};rm.forEach(function(m){ids[m.id]=m;var i=state.meals.map(function(x){return x.id}).indexOf(m.id);if(i>=0) state.meals[i]=m;else state.meals.push(m)});
+    state.meals=state.meals.filter(function(m){return m.seed&&!m.edited||ids[m.id]});
+    state.deleted.forEach(function(id){state.meals=state.meals.filter(function(m){return m.id!==id})});
+    state.tab=state.tab||'meals';
+    save();render();
+  }finally{sy.applying=false}
+}
+function syncPull(){
+  if(!sy.code||sy.busy) return Promise.resolve();
+  sy.busy=true;
+  return fetch(syUrl()+'?key='+FB.apiKey).then(function(r){
+    if(r.status===404) return syncPush();
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json().then(function(d){
+      var f=d.fields||{},ts=Number((f.ts||{}).integerValue||0);
+      if(ts>sy.base&&ts>sy.lm){applyRemote((f.data||{}).stringValue||'{}');sy.base=ts;sy.lm=ts;syncSave();setMsg('Mis à jour depuis l’autre appareil')}
+      else if(sy.lm>sy.base){return syncPush()}
+      else setMsg('À jour');
+    });
+  }).catch(function(e){setMsg('Synchro impossible ('+e.message+')')}).then(function(){sy.busy=false});
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden) syncPull()});
 function mealById(id){for(var i=0;i<state.meals.length;i++){if(state.meals[i].id===id) return state.meals[i]}return null}
 function init(){
   var saved=loadSaved();
@@ -1899,6 +1953,7 @@ function renderSettings(m){
   state.order.map(function(r,i){return '<div class="ord"><span>'+esc(r)+'</span><span class="btns"><button class="btn sm" data-act="rup" data-i="'+i+'" aria-label="Monter '+esc(r)+'"'+(i===0?' disabled':'')+'>▲</button><button class="btn sm" data-act="rdn" data-i="'+i+'" aria-label="Descendre '+esc(r)+'"'+(i===state.order.length-1?' disabled':'')+'>▼</button></span></div>'}).join('')+
   '<button class="btn sm" data-act="rreset">Remettre l\'ordre d\'origine</button></section>'+
   '<section class="card"><h2>Importer des repas</h2><p>Colle ici la réponse de ChatGPT (format REPAS / CATÉGORIE / INGRÉDIENTS). Les repas existants sont mis à jour, sauf ceux que tu as modifiés ici.</p><textarea id="imp" placeholder="REPAS : …"></textarea><div class="btns"><button class="btn primary" data-act="import">Importer</button></div></section>'+
+  '<section class="card"><h2>Synchronisation</h2><p>Entre le même code sur ton PC et ton téléphone : tes repas, ta sélection et ta liste se mettent à jour sur les deux. Choisis un code long et personnel.</p><label class="fld">Code de synchro<input type="text" id="syncCode" autocapitalize="off" autocomplete="off" spellcheck="false" value="'+esc(sy.code)+'" placeholder="ex. mon-code-long-12345"></label><div class="btns" style="margin-top:10px"><button class="btn primary" data-act="sync-on">'+(sy.code?'Enregistrer le code':'Activer')+'</button>'+(sy.code?'<button class="btn" data-act="sync-now">Synchroniser maintenant</button><button class="btn" data-act="sync-off">Désactiver</button>':'')+'</div><p id="syMsg" style="margin-top:8px">'+esc(sy.msg)+'</p></section>'+
   '<section class="card"><h2>Sauvegarde</h2><p>Tout est enregistré sur cet appareil. Copie la sauvegarde pour la garder ou la passer d\'un appareil à l\'autre.</p><div class="btns"><button class="btn" data-act="backup">Copier la sauvegarde</button><button class="btn" data-act="restore-open">Restaurer</button></div></section>'+
   (state.deleted.length?'<section class="card"><h2>Repas supprimés</h2><p>'+state.deleted.length+' repas supprimé'+(state.deleted.length>1?'s':'')+'. Tu peux les remettre dans l\'appli.</p><div class="btns"><button class="btn" data-act="undelete">Restaurer les repas supprimés</button></div></section>':'')+
   '<section class="card"><h2>Tout effacer</h2><p>Supprime tes repas modifiés, tes prix et tes réglages sur cet appareil.</p><div class="btns"><button class="btn danger" data-act="wipe" id="wipeBtn">Réinitialiser l\'appli</button></div></section>';
@@ -2056,6 +2111,9 @@ document.addEventListener('click',function(ev){
   if(a==='pers'){state.persons=Math.max(1,Math.min(20,state.persons+Number(t.dataset.d)));save();render();return}
   if(a==='flt'){state.flt=t.dataset.f;save();render();return}
   if(a==='cat'){state.cat=t.dataset.c;save();render();return}
+  if(a==='sync-on'){var c=($('syncCode').value||'').trim();if(c.length<8){setMsg('Code trop court (8 caractères minimum)');return}sy.code=c;sy.base=0;sy.lm=0;syncSave();setMsg('Synchronisation…');syncPull().then(function(){render()});return}
+  if(a==='sync-now'){setMsg('Synchronisation…');syncPull();return}
+  if(a==='sync-off'){sy.code='';syncSave();setMsg('');render();return}
   if(a==='plan'){openPlan();return}
   if(a==='pl-up'||a==='pl-dn'){var i=Number(t.dataset.i),j=a==='pl-up'?i-1:i+1,pl=state.plan;if(pl[j]==null) return;var tmp=pl[i];pl[i]=pl[j];pl[j]=tmp;save();openPlan(true);return}
   if(a==='pl-png'){makePng();return}
@@ -2190,7 +2248,7 @@ document.addEventListener('change',function(ev){
 document.addEventListener('keydown',function(e){if(e.key==='Escape') closeSheet()});
 
 window.__app={GPT:GPT,state:state,buildList:buildList,parseMeals:parseMeals,listText:listText,serialize:serialize};
-init();render();
+init();render();syncPull();
 })();
 </script>
 
