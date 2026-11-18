@@ -2282,12 +2282,11 @@ function planSlots(){
 }
 function openPlan(keep){
   var pl=planSlots(); save(); sheetCtx={type:'plan'};
-  var h='<h2>Planning</h2><p style="margin:0 0 8px;color:var(--muted);font-size:13.5px">Ordre : midi puis soir, du lundi au dimanche. Déplace les repas avec les flèches.</p>';
+  var h='<h2>Planning</h2><p style="margin:0 0 8px;color:var(--muted);font-size:13.5px">Ordre : midi puis soir, du lundi au dimanche. Déplace les repas avec les flèches, puis crée l\u2019image.</p><div class="btns"><button class="btn primary" data-act="pl-png">Créer les PNG</button><button class="btn" data-act="close">Fermer</button></div><div id="plImgs"></div>';
   pl.forEach(function(id,i){
     var w=Math.floor(i/14)+1,d=Math.floor((i%14)/2),sl=i%2?'soir':'midi',m=mealById(id);
     h+=(i%14===0?'<h3 class="rayon">Semaine '+w+'</h3>':'')+'<div class="ord"><span>'+DAYS[d].slice(0,3)+' '+sl+' · '+esc(m?m.name:'?')+'</span><span class="btns"><button class="btn sm" data-act="pl-up" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Monter">▲</button><button class="btn sm" data-act="pl-dn" data-i="'+i+'"'+(i===pl.length-1?' disabled':'')+' aria-label="Descendre">▼</button></span></div>';
   });
-  h+='<div class="btns" style="margin-top:14px"><button class="btn primary" data-act="pl-png">Créer les PNG</button><button class="btn" data-act="close">Fermer</button></div><div id="plImgs"></div>';
   openSheet(h,keep);
 }
 function wrapText(ctx,txt,w){
@@ -2330,7 +2329,7 @@ function makePng(){
       })(w);
     }
   }
-  if(document.fonts&&document.fonts.load){document.fonts.load('bold 42px "Open Sans"').then(go,go)}else go();
+  (document.fonts&&document.fonts.load?document.fonts.load('bold 42px "Open Sans"').then(go,go):Promise.resolve(go())).then(function(){try{box.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}});
 }
 function copyText(text){
   function fallback(){
