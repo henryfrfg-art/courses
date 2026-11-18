@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Courses"><meta name="theme-color" content="#0c7566">
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Courses"><meta name="theme-color" content="#0c7566"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-180.png">
 <title>Mes courses</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -235,7 +235,6 @@ nav{background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdro
   body{padding-bottom:104px}
   .mc:hover{border-color:var(--accent)}
   .ln:hover{background:color-mix(in srgb,var(--tint) 45%,transparent)}
-  .sheet{left:50%;right:auto;transform:translateX(-50%);width:min(640px,100%);border-radius:20px 20px 0 0}
 }
 @media (min-width:1200px){
   .wrap{max-width:1180px}
@@ -318,6 +317,7 @@ nav .logo{display:none}
   :root[data-glass]{--surface:var(--surface-solid);--surface-strong:var(--surface-solid)}
 }
 .thgroup{margin:6px 0 2px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -2316,18 +2316,20 @@ function makePng(){
   var pl=planSlots(),box=$('plImgs');box.innerHTML='';
   var weeks=Math.ceil(pl.length/14);
   function go(){
+    var fin=document.createElement('div');fin.style.cssText='margin-top:16px;display:grid;gap:8px';fin.innerHTML='<p style="margin:0;color:var(--muted);font-size:13.5px">Quand tu as fini tes courses, repars de zéro : la sélection, la liste cochée et le planning sont effacés (tes repas restent). Attention : la liste de courses disparaît aussi, garde-la pour le magasin.</p><button class="btn danger" data-act="pl-reset">Terminer et repartir de zéro</button>';
     for(var w=0;w<weeks;w++){
       (function(w){
         var cv=drawWeek(pl.slice(w*14,w*14+14)),url=cv.toDataURL('image/png');
         var wrap=document.createElement('div');wrap.style.marginTop='16px';
         wrap.innerHTML='<img src="'+url+'" alt="Planning semaine '+(w+1)+'" style="width:100%;border-radius:8px;background:#fff"><div class="btns" style="margin-top:8px"><a class="btn" download="planning-semaine-'+(w+1)+'.png" href="'+url+'">Télécharger semaine '+(w+1)+'</a><button class="btn" data-act="pl-share" data-w="'+w+'">Partager</button></div>';
-        box.appendChild(wrap);wrap._cv=cv;wrap.querySelector('[data-act=pl-share]').onclick=function(){
+        box.insertBefore(wrap,fin.parentNode===box?fin:null);wrap._cv=cv;wrap.querySelector('[data-act=pl-share]').onclick=function(){
           cv.toBlob(function(b){var f=new File([b],'planning-semaine-'+(w+1)+'.png',{type:'image/png'});
             if(navigator.canShare&&navigator.canShare({files:[f]})) navigator.share({files:[f]}).catch(function(){});
             else toast('Appui long sur l’image pour l’enregistrer')});
         };
       })(w);
     }
+    box.appendChild(fin);
   }
   (document.fonts&&document.fonts.load?document.fonts.load('bold 42px "Open Sans"').then(go,go):Promise.resolve(go())).then(function(){try{box.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}});
 }
@@ -2353,6 +2355,7 @@ document.addEventListener('click',function(ev){
   if(a==='plan'){openPlan();return}
   if(a==='pl-up'||a==='pl-dn'){var i=Number(t.dataset.i),j=a==='pl-up'?i-1:i+1,pl=state.plan;if(pl[j]==null) return;var tmp=pl[i];pl[i]=pl[j];pl[j]=tmp;save();openPlan(true);return}
   if(a==='pl-png'){makePng();return}
+  if(a==='pl-reset'){twoStep(t,'plreset','Tout effacer ? Appuie encore',function(){state.sel={};state.checked={};state.stock={};state.adj={};state.plan=[];save();closeSheet();render();toast('Nouvelle liste prête')});return}
   if(a==='inc'){setSel(id,1);save();render();return}
   if(a==='dec'){setSel(id,-1);save();render();return}
   if(a==='open-meal'){openMeal(id);return}
@@ -2491,6 +2494,7 @@ document.addEventListener('keydown',function(e){
 
 window.__app={GPT:GPT,state:state,buildList:buildList,parseMeals:parseMeals,listText:listText,serialize:serialize};
 init();render();syncPull();
+try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}
 })();
 </script>
 
