@@ -1810,12 +1810,14 @@ function parseIng(line){
   var name=canonName(p[0]); var nn=norm(name);
   if(!nn||/(^|\b)pst(\b|$)|proteines? de soja/.test(nn)) return null;
   var std=STD[nn]; var q=NaN, est=false;
+  var ud=(typeof state!=='undefined'&&state.defs)?state.defs[nn]:null;
+  if(ud) std=[ud.q,ud.u,(std&&std[1]===ud.u)?std[2]:0];
   var m=(p[1]||'').match(/^(\d+(?:[.,]\d+)?)\s*(~)?/);
   if(m){q=parseFloat(m[1].replace(',','.')); est=!!m[2];}
   var u=normUnit(p[2]||'');
   if(isNaN(q)){
     if(std){q=std[0]; u=std[1];} else {q=1; u='pièce';}
-    est=true;
+    est=!ud;
   } else {
     if(u==='kg'){q*=1000;u='g';} else if(u==='l'){q*=1000;u='ml';} else if(u==='cl'){q*=10;u='ml';}
     if(!u) u=std?std[1]:'pièce';
@@ -1861,7 +1863,7 @@ function serialize(m){
 }
 
 /* ---------- État et stockage ---------- */
-var state={meals:[],deleted:[],sel:{},checked:{},stock:{},stateOv:{},prices:{},packOv:{},persons:2,target:28,budget:[190,250],order:RAYONS.slice(),tab:'meals',cat:'Tous',flt:'all',q:'',adj:{},extras:[],xknown:{},bagCfg:{'echalotes':{min:5,size:0},'ail':{min:5,size:0}}};
+var state={meals:[],deleted:[],sel:{},checked:{},stock:{},stateOv:{},prices:{},packOv:{},persons:2,target:28,budget:[190,250],order:RAYONS.slice(),tab:'meals',cat:'Tous',flt:'all',q:'',adj:{},extras:[],xknown:{},defs:{},bagCfg:{'echalotes':{min:5,size:0},'ail':{min:5,size:0}}};
 var mem=null;
 function loadSaved(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return mem}}
 function save(){var s=JSON.stringify(state);mem=JSON.parse(s);try{localStorage.setItem(KEY,s)}catch(e){}syncDirty()}
@@ -2229,10 +2231,35 @@ function lineRow(l){
 }
 
 /* Réglages */
+
+/* ---------- Quantités par défaut ---------- */
+var DEFUNITS=['g','ml','pièce','paquet','boîte','pot','tranches','portion'];
+function defFor(k,ing){
+  var d=state.defs&&state.defs[k];if(d) return {q:d.q,u:d.u,own:true};
+  var sd=STD[k];if(sd) return {q:sd[0],u:sd[1],own:false};
+  return {q:Math.round(ing.q*2/(1)*100)/100,u:ing.u,own:false};
+}
+var defQ='';
+function defaultsCard(){
+  var kn=knownIngs(),keys=Object.keys(kn).sort(function(a,b){return kn[a].n.localeCompare(kn[b].n,'fr')});
+  var f=norm(defQ),rows=keys.filter(function(k){return !f||k.indexOf(f)>=0}).slice(0,60).map(function(k){
+    var d=defFor(k,kn[k]);
+    return '<div class="irow" style="align-items:center"><span style="min-width:0;overflow-wrap:anywhere">'+esc(kn[k].n)+(d.own?' <span class="tag">perso</span>':'')+'</span><span class="cin"><input type="number" step="any" min="0" inputmode="decimal" data-dq="'+esc(k)+'" value="'+d.q+'" aria-label="Quantité par défaut de '+esc(kn[k].n)+'"><select data-du="'+esc(k)+'" aria-label="Unité">'+DEFUNITS.concat(DEFUNITS.indexOf(d.u)<0?[d.u]:[]).map(function(u){return '<option'+(u===d.u?' selected':'')+'>'+esc(u)+'</option>'}).join('')+'</select></span></div>'}).join('');
+  return '<section class="card"><h2>Quantités par défaut</h2><p>Quantité utilisée pour 2 personnes quand tu ajoutes un ingrédient sans la préciser. Quand tu la changes ici, elle est aussi appliquée à ce produit dans tous tes repas.</p><input type="search" id="defq" placeholder="Chercher un aliment (ex. fromage râpé)" value="'+esc(defQ)+'" autocomplete="off">'+
+   '<div id="deflist">'+(rows||'<p>Aucun aliment trouvé.</p>')+'</div>'+(keys.length>60&&!f?'<p>Les 60 premiers sont affichés : utilise la recherche.</p>':'')+'</section>';
+}
+function setDefault(k,q,u){
+  var kn=knownIngs()[k];if(!kn||!(q>=0)) return;
+  state.defs[k]={q:q,u:u};
+  var n=0;
+  state.meals.forEach(function(m){m.ings.forEach(function(i){if(norm(i.n)===k){i.q=Math.round(q*(m.base||2)/2*100)/100;i.u=u;i.e=false;m.edited=true;n++}})});
+  save();toast('Mis à jour dans '+n+' repas');
+}
 function renderSettings(m){
   m.innerHTML=themeCard()+
   '<section class="card"><h2>Mes habitudes</h2><div class="two"><label class="fld">Repas par session<input type="number" id="s_target" min="1" max="99" value="'+state.target+'"></label><label class="fld">Personnes (par défaut)<input type="number" id="s_pers" min="1" max="20" value="'+state.persons+'"></label></div>'+
   '<div class="two"><label class="fld">Budget minimum (€)<input type="number" id="s_b0" min="0" value="'+state.budget[0]+'"></label><label class="fld">Budget maximum (€)<input type="number" id="s_b1" min="0" value="'+state.budget[1]+'"></label></div></section>'+
+  defaultsCard()+
   '<section class="card"><h2>Ordre des rayons</h2><p>Classe les rayons comme ton parcours au Leclerc de Riantec. La liste suit cet ordre.</p>'+
   state.order.map(function(r,i){return '<div class="ord"><span>'+esc(r)+'</span><span class="btns"><button class="btn sm" data-act="rup" data-i="'+i+'" aria-label="Monter '+esc(r)+'"'+(i===0?' disabled':'')+'>▲</button><button class="btn sm" data-act="rdn" data-i="'+i+'" aria-label="Descendre '+esc(r)+'"'+(i===state.order.length-1?' disabled':'')+'>▼</button></span></div>'}).join('')+
   '<button class="btn sm" data-act="rreset">Remettre l\'ordre d\'origine</button></section>'+
@@ -2504,12 +2531,21 @@ document.addEventListener('click',function(ev){
 document.addEventListener('input',function(ev){
   var t=ev.target;
   if(t.id==='q'){state.q=t.value;renderMealList();return}
+  if(t.id==='defq'){defQ=t.value;var tmp=document.createElement('div');tmp.innerHTML=defaultsCard();$('deflist').innerHTML=tmp.querySelector('#deflist').innerHTML;return}
 });
 document.addEventListener('change',function(ev){
   var t=ev.target;
+  if(t.dataset&&(t.dataset.dq!=null||t.dataset.du!=null)){
+    var dk=t.dataset.dq!=null?t.dataset.dq:t.dataset.du,row=t.closest('.irow'),dqv=parseFloat(String(row.querySelector('[data-dq]').value).replace(',','.'));
+    if(dqv>=0){setDefault(dk,dqv,row.querySelector('[data-du]').value);var tg=row.querySelector('.tag');if(!tg){var sp=row.firstElementChild;sp.insertAdjacentHTML('beforeend',' <span class="tag">perso</span>')}}
+    return;
+  }
   if(t.id==='a_name'&&sheetCtx&&sheetCtx.type==='meal'){
     var kn=knownIngs()[norm(t.value)];
     if(kn){$('a_u').value=kn.u;$('a_r').value=kn.r;$('a_s').value=kn.s}
+    var nk=norm(t.value),dd=kn?defFor(nk,kn):(STD[nk]||(state.defs&&state.defs[nk])?defFor(nk,{q:1,u:'pièce'}):null);
+    if(dd){$('a_q').placeholder='Défaut : '+dd.q+' '+dd.u;if(!kn||!$('a_u').value) $('a_u').value=dd.u}
+    else{var rf=rayonFor(nk);if(rf&&$('a_r')) $('a_r').value=rf}
     return;
   }
   if(t.id==='x_name'){var kx2=xKnown()[norm(t.value)];if(kx2){$('x_u').value=kx2.u;$('x_r').value=kx2.r;$('x_s').value=kx2.s}return}
