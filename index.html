@@ -318,6 +318,7 @@ nav .logo{display:none}
 }
 .thgroup{margin:6px 0 2px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 
+.ln .lt{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .iname{display:flex;align-items:center;gap:10px;min-width:0}
 .vb{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--muted);background:transparent;color:#fff;font-size:15px;font-weight:700;line-height:1;display:inline-grid;place-items:center;padding:0;cursor:pointer;transition:background .15s,border-color .15s}
 .vb.on{background:var(--ok);border-color:var(--ok)}
@@ -2335,7 +2336,7 @@ function openLine(key){
   var canFlip=l.orig==='frais'||l.orig==='surgelé';
   openSheet('<h2>'+esc(l.name)+'</h2><div class="sub" style="color:var(--muted)">À acheter : '+esc(l.text)+'</div>'+
    (l.est?'<div class="note">Quantité standard, pas encore confirmée. Corrige-la ci-dessous : elle sera retenue pour les prochaines listes.</div>':'')+
-   (l.adj?'<div class="irow" style="align-items:center"><span>Ajustement manuel : '+adjLabel(l)+'</span><button class="btn sm" data-act="adj-reset" data-key="'+esc(key)+'">Réinitialiser</button></div>':'')+'<div><b style="font-size:13.5px">'+(l.extra?'Produit ajouté à la main':'Quantité par repas')+'</b>'+contrib+'</div>'+
+   (l.adj?'<div class="irow" style="align-items:center"><span>Ajustement manuel : '+adjLabel(l)+'</span><button class="btn sm" data-act="adj-reset" data-key="'+esc(key)+'">Réinitialiser</button></div>':'')+'<div><b style="font-size:13.5px">'+(l.extra?'Produit ajouté à la main':'Utilisé dans ces repas (quantité par repas)')+'</b>'+contrib+'</div>'+
    '<div class="two"><label class="fld">Prix ('+(l.pu)+')<input type="number" step="0.01" min="0" inputmode="decimal" id="l_price" value="'+(l.price!=null?l.price:'')+'" placeholder="0,00 €"></label>'+
    ((l.u==='g'||l.u==='ml')?'<label class="fld">Taille du paquet ('+l.u+')<input type="number" min="0" inputmode="numeric" id="l_pack" value="'+(l.pk||'')+'" placeholder="aucune"></label>':'<div></div>')+'</div>'+
    (l.u==='pièce'?'<div class="two"><label class="fld">Sachet à partir de (pièces)<input type="number" min="0" inputmode="numeric" id="l_bagmin" value="'+(bc0.min||'')+'" placeholder="jamais"></label><label class="fld">Pièces par sachet<input type="number" min="1" inputmode="numeric" id="l_bagsize" value="'+(bc0.size||'')+'" placeholder="toujours 1"></label></div>':'')+'<div class="btns">'+(canFlip?'<button class="btn" data-act="flip" data-key="'+esc(key)+'" data-keep="1">Passer en '+(l.st==='surgelé'?'frais':'surgelé')+'</button>':'')+
@@ -2600,6 +2601,21 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='/'){e.preventDefault();if(state.tab!=='meals'){state.tab='meals';render()}var q=$('q');if(q) q.focus()}
 });
 
+
+/* Appui long sur une ligne de la liste : voir à quels repas elle appartient */
+(function(){
+  var tm=null,sx=0,sy2=0,fired=false;
+  function clr(){clearTimeout(tm);tm=null}
+  document.addEventListener('pointerdown',function(ev){
+    var b=ev.target.closest&&ev.target.closest('.ln .lt[data-key]');if(!b) return;
+    fired=false;sx=ev.clientX;sy2=ev.clientY;clr();
+    tm=setTimeout(function(){fired=true;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}openLine(b.dataset.key)},500);
+  });
+  document.addEventListener('pointermove',function(ev){if(tm&&(Math.abs(ev.clientX-sx)>10||Math.abs(ev.clientY-sy2)>10)) clr()});
+  ['pointerup','pointercancel','pointerleave'].forEach(function(n){document.addEventListener(n,clr)});
+  document.addEventListener('click',function(ev){if(fired&&ev.target.closest&&ev.target.closest('.ln .lt')){ev.stopPropagation();ev.preventDefault();fired=false}},true);
+  document.addEventListener('contextmenu',function(ev){var b=ev.target.closest&&ev.target.closest('.ln .lt[data-key]');if(b){ev.preventDefault();clr();fired=true;openLine(b.dataset.key)}});
+})();
 window.__app={GPT:GPT,state:state,buildList:buildList,parseMeals:parseMeals,listText:listText,serialize:serialize};
 init();render();syncPull();
 try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}
