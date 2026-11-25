@@ -1946,7 +1946,12 @@ function applyRemote(data){
   var o=JSON.parse(data);sy.applying=true;
   try{
     var rm=o.meals||[];delete o.meals;
+    try{localStorage.setItem('courses.prev',JSON.stringify(state))}catch(e){}
+    var keepDel=(state.deleted||[]).slice(),keepLocal=state.meals.filter(function(m){return !m.seed||m.edited});
     Object.keys(o).forEach(function(k){state[k]=o[k]});
+    state.deleted=Array.from(new Set((state.deleted||[]).concat(keepDel.filter(function(id){return !rm.some(function(m){return m.id===id})}))));
+    var inRm={};rm.forEach(function(m){inRm[m.id]=1});
+    keepLocal.forEach(function(m){if(!inRm[m.id]&&state.deleted.indexOf(m.id)<0) rm.push(m)});
     var ids={};rm.forEach(function(m){ids[m.id]=m;var i=state.meals.map(function(x){return x.id}).indexOf(m.id);if(i>=0) state.meals[i]=m;else state.meals.push(m)});
     state.meals=state.meals.filter(function(m){return m.seed&&!m.edited||ids[m.id]});
     state.deleted.forEach(function(id){state.meals=state.meals.filter(function(m){return m.id!==id})});
@@ -2264,7 +2269,7 @@ function renderSettings(m){
   state.order.map(function(r,i){return '<div class="ord"><span>'+esc(r)+'</span><span class="btns"><button class="btn sm" data-act="rup" data-i="'+i+'" aria-label="Monter '+esc(r)+'"'+(i===0?' disabled':'')+'>▲</button><button class="btn sm" data-act="rdn" data-i="'+i+'" aria-label="Descendre '+esc(r)+'"'+(i===state.order.length-1?' disabled':'')+'>▼</button></span></div>'}).join('')+
   '<button class="btn sm" data-act="rreset">Remettre l\'ordre d\'origine</button></section>'+
   '<section class="card"><h2>Importer des repas</h2><p>Colle ici la réponse de ChatGPT (format REPAS / CATÉGORIE / INGRÉDIENTS). Les repas existants sont mis à jour, sauf ceux que tu as modifiés ici.</p><textarea id="imp" placeholder="REPAS : …"></textarea><div class="btns"><button class="btn primary" data-act="import">Importer</button></div></section>'+
-  '<section class="card"><h2>Synchronisation</h2><p>Entre le même code sur ton PC et ton téléphone : tes repas, ta sélection et ta liste se mettent à jour sur les deux. Choisis un code long et personnel.</p><label class="fld">Code de synchro<input type="text" id="syncCode" autocapitalize="off" autocomplete="off" spellcheck="false" value="'+esc(sy.code)+'" placeholder="ex. mon-code-long-12345"></label><div class="btns" style="margin-top:10px"><button class="btn primary" data-act="sync-on">'+(sy.code?'Enregistrer le code':'Activer')+'</button>'+(sy.code?'<button class="btn" data-act="sync-now">Synchroniser maintenant</button><button class="btn" data-act="sync-off">Désactiver</button>':'')+'</div><p id="syMsg" style="margin-top:8px">'+esc(sy.msg)+'</p></section>'+
+  '<section class="card"><h2>Synchronisation</h2><p><b>'+state.meals.length+' repas</b> sur cet appareil.</p><p>Entre le même code sur ton PC et ton téléphone : tes repas, ta sélection et ta liste se mettent à jour sur les deux. Choisis un code long et personnel.</p><label class="fld">Code de synchro<input type="text" id="syncCode" autocapitalize="off" autocomplete="off" spellcheck="false" value="'+esc(sy.code)+'" placeholder="ex. mon-code-long-12345"></label><div class="btns" style="margin-top:10px"><button class="btn primary" data-act="sync-on">'+(sy.code?'Enregistrer le code':'Activer')+'</button>'+(sy.code?'<button class="btn" data-act="sync-now">Synchroniser maintenant</button><button class="btn" data-act="sync-undo">Annuler la dernière synchro</button><button class="btn" data-act="sync-off">Désactiver</button>':'')+'</div><p id="syMsg" style="margin-top:8px">'+esc(sy.msg)+'</p></section>'+
   '<section class="card kb"><h2>Raccourcis clavier</h2><p><b>1</b> Repas · <b>2</b> Liste · <b>3</b> Réglages · <b>/</b> Rechercher un repas · <b>Échap</b> Fermer</p></section>'+
   '<section class="card"><h2>Sauvegarde</h2><p>Tout est enregistré sur cet appareil. Copie la sauvegarde pour la garder ou la passer d\'un appareil à l\'autre.</p><div class="btns"><button class="btn" data-act="backup">Copier la sauvegarde</button><button class="btn" data-act="restore-open">Restaurer</button></div></section>'+
   (state.deleted.length?'<section class="card"><h2>Repas supprimés</h2><p>'+state.deleted.length+' repas supprimé'+(state.deleted.length>1?'s':'')+'. Tu peux les remettre dans l\'appli.</p><div class="btns"><button class="btn" data-act="undelete">Restaurer les repas supprimés</button></div></section>':'')+
@@ -2429,6 +2434,7 @@ document.addEventListener('click',function(ev){
   if(a==='cat'){state.cat=t.dataset.c;save();render();return}
   if(a==='sync-on'){var c=($('syncCode').value||'').trim();if(c.length<8){setMsg('Code trop court (8 caractères minimum)');return}sy.code=c;sy.base=0;sy.lm=0;syncSave();setMsg('Synchronisation…');syncPull().then(function(){render()});return}
   if(a==='sync-now'){setMsg('Synchronisation…');syncPull();return}
+  if(a==='sync-undo'){try{var pv=localStorage.getItem('courses.prev');if(!pv){toast('Rien à annuler');return}var po=JSON.parse(pv);Object.keys(state).forEach(function(k){delete state[k]});Object.keys(po).forEach(function(k){state[k]=po[k]});sy.lm=Date.now();save();location.reload()}catch(e){toast('Impossible d\'annuler')}return}
   if(a==='sync-off'){sy.code='';syncSave();setMsg('');render();return}
   if(a==='theme'){applyTheme(t.dataset.th);render();return}
   if(a==='x-add'){var xq=parseFloat(String($('x_q').value).replace(',','.'));if(!xAdd($('x_name').value,xq,$('x_u').value,$('x_r').value,$('x_s').value)){toast('Écris le nom du produit.');return}xOpen=true;save();render();toast('Ajouté à la liste');return}
